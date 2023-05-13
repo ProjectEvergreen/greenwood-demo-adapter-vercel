@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og:http://ogp.me/ns#">
+
+  <head>
+    <title>Greenwood Demo - Vercel Adapter</title>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="icon" href="/favicon.ico"/>
+
+    <style>
+      main {
+        width: 70%;
+        margin: 0 auto;
+      }
+
+      .demo-container {
+        width: 48%;
+        display: inline-block;
+        border: 1px dotted blue;
+        vertical-align: top;
+      }
+
+      h1 {
+        text-align: center;
+      }
+    </style>
+
+    <!-- Greeting API Setup -->
+    <script type="module">
+      const params = new URLSearchParams(globalThis.document?.location?.search);
+      const qs = params.has('name') ? `?name=${params.get('name')}` : '';
+      const data = await fetch(new URL(`/api/greeting${qs}`, import.meta.url)).then(resp => resp.json());
+
+      document.getElementById('greeting').textContent = data.message;
+    </script>
+  </head>
+
+  <body>
+    <main>
+      <h1 id="greeting"></h1>
+    </main>
+  </body>
+</html>

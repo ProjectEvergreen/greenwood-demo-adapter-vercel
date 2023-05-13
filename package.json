@@ -1,0 +1,30 @@
+{
+  "name": "greenwood-demo-adapter-vercel",
+  "version": "1.0.0",
+  "description": "A demonstration repo for using Greenwood with Vercel Serverless and Edge functions",
+  "homepage": "https://github.com/ProjectEvergreen/greenwood-demo-adapter-vercel#readme",
+  "author": "Owen Buckley <owen@thegreenhouse.io>",
+  "license": "ISC",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ProjectEvergreen/greenwood-demo-adapter-vercel.git"
+  },
+  "keywords": [
+    "Greenwood",
+    "Vercel",
+    "Serverless",
+    "Edge",
+    "SSR"
+  ],
+  "scripts": {
+    "develop": "greenwood develop",
+    "build": "greenwood build",
+    "serve": "greenwood serve",
+    "vercel": "vercel dev"
+  },
+  "devDependencies": {
+    "@greenwood/cli": "~0.28.2",
+    "vercel": "^29.3.0"
+  }
+}
