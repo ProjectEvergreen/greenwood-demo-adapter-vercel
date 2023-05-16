@@ -44,7 +44,7 @@ The serverless demos include the following examples:
 
 ### SSR Pages
 
-TODO
+- ✅ [`/artists`](https://greenwood-demo-adapter-vercel.vercel.app/artists) - SSR page for rendering Greenwood pages.  This implementation does not work because of `import.meta.url` (see above section on APIs)
 
 ## Edge
 
@@ -61,6 +61,7 @@ TODO
 ## Adapter Implementation Thoughts / Questions
 
 1. [ ] Will need to generate the _api/_ folder on-demand / as part of the build instead of hardcoding, likely from _manifest.json_
+1. [ ] How to manage vercel configuration (e.g. redirects for pages)?  Auto generate, auto merge into _vercel.json_?
 1. [ ] How to best manage local dev (runtime "compliance")
     - proxy vercel cli dev option?
     - should use _src/_ or _public/_?  depends on dev vs production mode?  Interestingly, the manual way only worked deployed when using _public/_
