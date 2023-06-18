@@ -1,0 +1,547 @@
+diff --git a/node_modules/@greenwood/cli/src/commands/build.js b/node_modules/@greenwood/cli/src/commands/build.js
+index 1dbd30a..a298c90 100644
+--- a/node_modules/@greenwood/cli/src/commands/build.js
++++ b/node_modules/@greenwood/cli/src/commands/build.js
+@@ -98,7 +98,7 @@ const runProductionBuild = async (compilation) => {
+           return Promise.resolve(server);
+         }));
+ 
+-        if (prerenderPlugin.workerUrl) {
++        if (prerenderPlugin.executeModuleUrl) {
+           await trackResourcesForRoutes(compilation);
+           await preRenderCompilationWorker(compilation, prerenderPlugin);
+         } else {
+diff --git a/node_modules/@greenwood/cli/src/config/rollup.config.js b/node_modules/@greenwood/cli/src/config/rollup.config.js
+index 8c3642a..2cc5821 100644
+--- a/node_modules/@greenwood/cli/src/config/rollup.config.js
++++ b/node_modules/@greenwood/cli/src/config/rollup.config.js
+@@ -224,10 +224,28 @@ const getRollupConfigForSsr = async (compilation, input) => {
+     },
+     plugins: [
+       greenwoodJsonLoader(),
+-      nodeResolve(),
++      // TODO should this be used in all configs?
++      nodeResolve({
++        preferBuiltins: true
++      }),
+       commonjs(),
+       importMetaAssets()
+-    ]
++    ],
++    onwarn: (errorObj) => {
++      const { code, message } = errorObj;
++
++      switch (code) {
++
++        case 'CIRCULAR_DEPENDENCY':
++          // let this through for lit to enable nodeResolve({ preferBuiltins: true })
++          // https://github.com/lit/lit/issues/449
++          break;
++        default:
++          // otherwise, log all warnings from rollup
++          console.debug(message);
++
++      }
++    }
+   }];
+ };
+ 
+diff --git a/node_modules/@greenwood/cli/src/lib/execute-route-module.js b/node_modules/@greenwood/cli/src/lib/execute-route-module.js
+new file mode 100644
+index 0000000..b1c1c63
+--- /dev/null
++++ b/node_modules/@greenwood/cli/src/lib/execute-route-module.js
+@@ -0,0 +1,45 @@
++import { renderToString, renderFromHTML } from 'wc-compiler';
++
++// TODO simplify this API signature (lot of things could be combined)
++// - route, label and id could just be the current page
++// - scripts is already part of the compilation
++async function executeRouteModule({ moduleUrl, compilation, page = {}, prerender = false, htmlContents = null, scripts = [] }) {
++  const data = {
++    template: null,
++    body: null,
++    frontmatter: null,
++    html: null
++  };
++
++  if (prerender) {
++    const scriptURLs = scripts.map(scriptFile => new URL(scriptFile));
++    const { html } = await renderFromHTML(htmlContents, scriptURLs);
++
++    data.html = html;
++  } else {
++    const module = await import(moduleUrl).then(module => module);
++    const { getTemplate = null, getBody = null, getFrontmatter = null } = module;
++
++    if (module.default) {
++      const { html } = await renderToString(new URL(moduleUrl), false);
++
++      data.body = html;
++    } else {
++      if (getBody) {
++        data.body = await getBody(compilation, page);
++      }
++    }
++
++    if (getTemplate) {
++      data.template = await getTemplate(compilation, page);
++    }
++
++    if (getFrontmatter) {
++      data.frontmatter = await getFrontmatter(compilation, page);
++    }
++  }
++
++  return data;
++}
++
++export { executeRouteModule };
+\ No newline at end of file
+diff --git a/node_modules/@greenwood/cli/src/lib/ssr-route-worker.js b/node_modules/@greenwood/cli/src/lib/ssr-route-worker.js
+index 490624a..12eb71d 100644
+--- a/node_modules/@greenwood/cli/src/lib/ssr-route-worker.js
++++ b/node_modules/@greenwood/cli/src/lib/ssr-route-worker.js
+@@ -1,47 +1,13 @@
+ // https://github.com/nodejs/modules/issues/307#issuecomment-858729422
+ import { parentPort } from 'worker_threads';
+-import { renderToString, renderFromHTML } from 'wc-compiler';
+ 
+-async function executeRouteModule({ moduleUrl, compilation, route, label, id, prerender, htmlContents, scripts }) {
+-  const parsedCompilation = JSON.parse(compilation);
+-  const data = {
+-    template: null,
+-    body: null,
+-    frontmatter: null,
+-    html: null
+-  };
+-
+-  if (prerender) {
+-    const scriptURLs = JSON.parse(scripts).map(scriptFile => new URL(scriptFile));
+-    const { html } = await renderFromHTML(htmlContents, scriptURLs);
+-
+-    data.html = html;
+-  } else {
+-    const module = await import(moduleUrl).then(module => module);
+-    const { getTemplate = null, getBody = null, getFrontmatter = null } = module;
+-
+-    if (module.default) {
+-      const { html } = await renderToString(new URL(moduleUrl), false);
+-
+-      data.body = html;
+-    } else {
+-      if (getBody) {
+-        data.body = await getBody(parsedCompilation, route);
+-      }
+-    }
+-
+-    if (getTemplate) {
+-      data.template = await getTemplate(parsedCompilation, route);
+-    }
+-
+-    if (getFrontmatter) {
+-      data.frontmatter = await getFrontmatter(parsedCompilation, route, label, id);
+-    }
+-  }
++async function executeModule({ executeModuleUrl, moduleUrl, compilation, page, prerender = false, htmlContents = null, scripts = '[]' }) {
++  const { executeRouteModule } = await import(executeModuleUrl);
++  const data = await executeRouteModule({ moduleUrl, compilation: JSON.parse(compilation), page: JSON.parse(page), prerender, htmlContents, scripts: JSON.parse(scripts) });
+ 
+   parentPort.postMessage(data);
+ }
+ 
+ parentPort.on('message', async (task) => {
+-  await executeRouteModule(task);
++  await executeModule(task);
+ });
+\ No newline at end of file
+diff --git a/node_modules/@greenwood/cli/src/lib/templating-utils.js b/node_modules/@greenwood/cli/src/lib/templating-utils.js
+index 39486a5..9adbed1 100644
+--- a/node_modules/@greenwood/cli/src/lib/templating-utils.js
++++ b/node_modules/@greenwood/cli/src/lib/templating-utils.js
+@@ -177,6 +177,8 @@ async function getAppTemplate(pageTemplateContents, context, customImports = [],
+ }
+ 
+ async function getUserScripts (contents, context) {
++  // TODO get rid of lit polyfills in core
++  // https://github.com/ProjectEvergreen/greenwood/issues/728
+   // https://lit.dev/docs/tools/requirements/#polyfills
+   if (process.env.__GWD_COMMAND__ === 'build') { // eslint-disable-line no-underscore-dangle
+     const userPackageJson = await getPackageJson(context);
+diff --git a/node_modules/@greenwood/cli/src/lifecycles/bundle.js b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
+index 3ad6bf0..9128252 100644
+--- a/node_modules/@greenwood/cli/src/lifecycles/bundle.js
++++ b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
+@@ -1,6 +1,7 @@
+ /* eslint-disable max-depth, max-len */
+ import fs from 'fs/promises';
+ import { getRollupConfigForApis, getRollupConfigForScriptResources, getRollupConfigForSsr } from '../config/rollup.config.js';
++import { getAppTemplate, getPageTemplate, getUserScripts } from '../lib/templating-utils.js';
+ import { hashString } from '../lib/hashing-utils.js';
+ import { checkResourceExists, mergeResponse, normalizePathnameForWindows } from '../lib/resource-utils.js';
+ import path from 'path';
+@@ -174,7 +175,6 @@ async function bundleApiRoutes(compilation) {
+ 
+ async function bundleSsrPages(compilation) {
+   // https://rollupjs.org/guide/en/#differences-to-the-javascript-api
+-  const { outputDir, pagesDir } = compilation.context;
+   // TODO context plugins for SSR ?
+   // https://github.com/ProjectEvergreen/greenwood/issues/1008
+   // const contextPlugins = compilation.config.plugins.filter((plugin) => {
+@@ -182,100 +182,72 @@ async function bundleSsrPages(compilation) {
+   // }).map((plugin) => {
+   //   return plugin.provider(compilation);
+   // });
+-
++  const hasSSRPages = compilation.graph.filter(page => page.isSSR).length > 0;
+   const input = [];
+ 
+-  if (!compilation.config.prerender) {
++  if (!compilation.config.prerender && hasSSRPages) {
++    const htmlOptimizer = compilation.config.plugins.find(plugin => plugin.name === 'plugin-standard-html').provider(compilation);
++    const { executeModuleUrl } = compilation.config.plugins.find(plugin => plugin.type === 'renderer').provider();
++    const { executeRouteModule } = await import(executeModuleUrl);
++    const { outputDir, pagesDir, scratchDir } = compilation.context;
++
+     for (const page of compilation.graph) {
+       if (page.isSSR && !page.data.static) {
+-        const { filename, path: pagePath } = page;
+-        const scratchUrl = new URL(`./${filename}`, outputDir);
+-
+-        // better way to write out inline code like this?
+-        await fs.writeFile(scratchUrl, `
+-          import { Worker } from 'worker_threads';
+-          import { getAppTemplate, getPageTemplate, getUserScripts } from '@greenwood/cli/src/lib/templating-utils.js';
+-
+-          export async function handler(request, compilation) {
+-            const routeModuleLocationUrl = new URL('./_${filename}', '${outputDir}');
+-            const routeWorkerUrl = '${compilation.config.plugins.find(plugin => plugin.type === 'renderer').provider().workerUrl}';
+-            const htmlOptimizer = compilation.config.plugins.find(plugin => plugin.name === 'plugin-standard-html').provider(compilation);
+-            let body = '';
+-            let html = '';
+-            let frontmatter;
+-            let template;
+-            let templateType = 'page';
+-            let title = '';
+-            let imports = [];
+-
+-            await new Promise((resolve, reject) => {
+-              const worker = new Worker(new URL(routeWorkerUrl));
+-
+-              worker.on('message', (result) => {
+-                if (result.body) {
+-                  body = result.body;
+-                }
+-
+-                if (result.template) {
+-                  template = result.template;
+-                }
+-
+-                if (result.frontmatter) {
+-                  frontmatter = result.frontmatter;
+-
+-                  if (frontmatter.title) {
+-                    title = frontmatter.title;
+-                  }
+-
+-                  if (frontmatter.template) {
+-                    templateType = frontmatter.template;
+-                  }
+-
+-                  if (frontmatter.imports) {
+-                    imports = imports.concat(frontmatter.imports);
+-                  }
+-                }
+-
+-                resolve();
+-              });
+-
+-              worker.on('error', reject);
+-              worker.on('exit', (code) => {
+-                if (code !== 0) {
+-                  reject(new Error(\`Worker stopped with exit code \${code}\`));
+-                }
+-              });
+-
+-              worker.postMessage({
+-                moduleUrl: routeModuleLocationUrl.href,
+-                compilation: \`${JSON.stringify(compilation)}\`,
+-                route: '${pagePath}'
+-              });
+-            });
+-
+-            html = template ? template : await getPageTemplate('', compilation.context, templateType, []);
+-            html = await getAppTemplate(html, compilation.context, imports, [], false, title);
+-            html = await getUserScripts(html, compilation.context);
+-            html = html.replace(\/\<content-outlet>(.*)<\\/content-outlet>\/s, body);
+-            html = await (await htmlOptimizer.optimize(new URL(request.url), new Response(html))).text();
+-
+-            return new Response(html);
++        const { filename, imports, route, template, title } = page;
++        const entryFileUrl = new URL(`./_${filename}`, scratchDir);
++        const moduleUrl = new URL(`./${filename}`, pagesDir);
++        // TODO getTemplate has to be static (for now?)
++        // const { getTemplate = null } = await import(new URL(`./${filename}`, pagesDir));
++        const data = await executeRouteModule({ moduleUrl, compilation, page, prerender: false, htmlContents: null, scripts: [] });
++        let staticHtml = '';
++
++        staticHtml = data.template ? data.template : await getPageTemplate(staticHtml, compilation.context, template, []);
++        // console.log('+ page template', { staticHtml });
++
++        staticHtml = await getAppTemplate(staticHtml, compilation.context, imports, [], false, title);
++        // console.log('+ app template', { staticHtml });
++
++        staticHtml = await getUserScripts(staticHtml, compilation.context);
++        // console.log('+ user scripts', { staticHtml });
++
++        // TODO do we want to use http:// here for optimizer?
++        staticHtml = await (await htmlOptimizer.optimize(new URL(`http://localhost:8080${route}`), new Response(staticHtml))).text();
++        // console.log('+ optimizer', { staticHtml });
++
++        // better way to write out this inline code?
++        // TODO does executeRouteModule need to get bundled?
++        // TODO do we need to bundle this too since we reference executeModuleUrl.href directly?
++        await fs.writeFile(entryFileUrl, `
++          import { executeRouteModule } from '${normalizePathnameForWindows(executeModuleUrl)}';
++
++          export async function handler(request) {
++            const compilation = JSON.parse('${JSON.stringify(compilation)}');
++            const page = JSON.parse('${JSON.stringify(page)}');
++            const moduleUrl = new URL('./_${filename}', '${outputDir.href}');
++            const data = await executeRouteModule({ moduleUrl, compilation, page });
++            let staticHtml = \`${staticHtml}\`;
++
++            // console.log({ page })
++            // console.log({ staticHtml })
++            // console.log({ data });
++
++            if (data.body) {
++              staticHtml = staticHtml.replace(\/\<content-outlet>(.*)<\\/content-outlet>\/s, data.body);
++            }
++
++            return new Response(staticHtml);
+           }
+         `);
+ 
+-        input.push(normalizePathnameForWindows(new URL(`./${filename}`, pagesDir)));
++        input.push(normalizePathnameForWindows(moduleUrl));
++        input.push(normalizePathnameForWindows(entryFileUrl));
+       }
+     }
+ 
+     const [rollupConfig] = await getRollupConfigForSsr(compilation, input);
+ 
++    // TODO do we need templates anymore?
+     if (rollupConfig.input.length > 0) {
+-      const { userTemplatesDir, outputDir } = compilation.context;
+-
+-      if (await checkResourceExists(userTemplatesDir)) {
+-        await fs.cp(userTemplatesDir, new URL('./_templates/', outputDir), { recursive: true });
+-      }
+-
+       const bundle = await rollup(rollupConfig);
+       await bundle.write(rollupConfig.output);
+     }
+@@ -309,13 +281,14 @@ const bundleCompilation = async (compilation) => {
+ 
+       await Promise.all([
+         await bundleApiRoutes(compilation),
+-        await bundleSsrPages(compilation),
+         await bundleScriptResources(compilation),
+         await bundleStyleResources(compilation, optimizeResourcePlugins)
+       ]);
+ 
+-      console.info('optimizing static pages....');
++      // bundleSsrPages depends on bundleScriptResources having run first
++      await bundleSsrPages(compilation);
+ 
++      console.info('optimizing static pages....');
+       await optimizeStaticPages(compilation, optimizeResourcePlugins);
+       await cleanUpResources(compilation);
+       await emitResources(compilation);
+diff --git a/node_modules/@greenwood/cli/src/lifecycles/graph.js b/node_modules/@greenwood/cli/src/lifecycles/graph.js
+index e70c46e..e1d6582 100644
+--- a/node_modules/@greenwood/cli/src/lifecycles/graph.js
++++ b/node_modules/@greenwood/cli/src/lifecycles/graph.js
+@@ -116,13 +116,13 @@ const generateGraph = async (compilation) => {
+               }
+               /* ---------End Menu Query-------------------- */
+             } else if (isDynamic) {
+-              const routeWorkerUrl = compilation.config.plugins.filter(plugin => plugin.type === 'renderer')[0].provider(compilation).workerUrl;
++              const routeWorkerUrl = compilation.config.plugins.filter(plugin => plugin.type === 'renderer')[0].provider(compilation).executeModuleUrl;
+               let ssrFrontmatter;
+ 
+               filePath = route;
+   
+               await new Promise((resolve, reject) => {
+-                const worker = new Worker(routeWorkerUrl);
++                const worker = new Worker(new URL('../lib/ssr-route-worker.js', import.meta.url));
+ 
+                 worker.on('message', async (result) => {
+                   if (result.frontmatter) {
+@@ -139,9 +139,19 @@ const generateGraph = async (compilation) => {
+                 });
+ 
+                 worker.postMessage({
++                  executeModuleUrl: routeWorkerUrl.href,
+                   moduleUrl: filenameUrl.href,
+                   compilation: JSON.stringify(compilation),
+-                  route
++                  // TODO need to get as many of these params as possible
++                  // or ignore completely?
++                  page: JSON.stringify({
++                    route,
++                    id,
++                    label: id.split('-')
++                      .map((idPart) => {
++                        return `${idPart.charAt(0).toUpperCase()}${idPart.substring(1)}`;
++                      }).join(' ')
++                  })
+                 });
+               });
+   
+diff --git a/node_modules/@greenwood/cli/src/lifecycles/prerender.js b/node_modules/@greenwood/cli/src/lifecycles/prerender.js
+index 6e13b95..ff183fa 100644
+--- a/node_modules/@greenwood/cli/src/lifecycles/prerender.js
++++ b/node_modules/@greenwood/cli/src/lifecycles/prerender.js
+@@ -55,7 +55,8 @@ async function preRenderCompilationWorker(compilation, workerPrerender) {
+ 
+   console.info('pages to generate', `\n ${pages.map(page => page.route).join('\n ')}`);
+ 
+-  const pool = new WorkerPool(os.cpus().length, workerPrerender.workerUrl);
++  console.log({ workerPrerender });
++  const pool = new WorkerPool(os.cpus().length, new URL('../lib/ssr-route-worker.js', import.meta.url));
+ 
+   for (const page of pages) {
+     const { route, outputPath, resources } = page;
+@@ -76,9 +77,10 @@ async function preRenderCompilationWorker(compilation, workerPrerender) {
+ 
+     body = await new Promise((resolve, reject) => {
+       pool.runTask({
++        executeModuleUrl: workerPrerender.executeModuleUrl.href,
+         modulePath: null,
+         compilation: JSON.stringify(compilation),
+-        route,
++        page: JSON.stringify(page),
+         prerender: true,
+         htmlContents: body,
+         scripts: JSON.stringify(scripts)
+diff --git a/node_modules/@greenwood/cli/src/lifecycles/serve.js b/node_modules/@greenwood/cli/src/lifecycles/serve.js
+index e0cc4f7..66adffb 100644
+--- a/node_modules/@greenwood/cli/src/lifecycles/serve.js
++++ b/node_modules/@greenwood/cli/src/lifecycles/serve.js
+@@ -132,38 +132,27 @@ async function getDevServer(compilation) {
+   // ETag Support - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+   // https://stackoverflow.com/questions/43659756/chrome-ignores-the-etag-header-and-just-uses-the-in-memory-cache-disk-cache
+   app.use(async (ctx) => {
++    const body = ctx.response.body;
+     const url = new URL(ctx.url);
+ 
+-    // don't interfere with external requests or API calls, only files
++    // don't interfere with external requests or API calls, binary files, or JSON
+     // and only run in development
+     if (process.env.__GWD_COMMAND__ === 'develop' && url.protocol === 'file:') { // eslint-disable-line no-underscore-dangle
+-      // TODO there's probably a better way to do this with tee-ing streams but this works for now
+-      const response = new Response(ctx.body, {
+-        status: ctx.response.status,
+-        headers: new Headers(ctx.response.header)
+-      }).clone();
+-      const splitResponse = response.clone();
+-      const contents = await splitResponse.text();
+-      const inm = ctx.headers['if-none-match'];
+-      const etagHash = url.pathname.split('.').pop() === 'json'
+-        ? hashString(JSON.stringify(contents))
+-        : hashString(contents);
+-
+-      if (inm && inm === etagHash) {
+-        ctx.status = 304;
+-        ctx.body = null;
+-        ctx.set('Etag', etagHash);
+-        ctx.set('Cache-Control', 'no-cache');
+-      } else if (!inm || inm !== etagHash) {
+-        ctx.body = Readable.from(response.body);
+-        ctx.status = ctx.status;
+-        ctx.set('Content-Type', ctx.response.header['content-type']);
+-        ctx.set('Etag', etagHash);
+-  
+-        // TODO automatically loop and apply all custom headers to Koa response, include Content-Type below
+-        // https://github.com/ProjectEvergreen/greenwood/issues/1048
+-        if (response.headers.has('Content-Length')) {
+-          ctx.set('Content-Length', response.headers.get('Content-Length'));
++      if (!body || Buffer.isBuffer(body)) {
++        // console.warn(`no body for => ${ctx.url}`);
++      } else {
++        const inm = ctx.headers['if-none-match'];
++        const etagHash = url.pathname.split('.').pop() === 'json'
++          ? hashString(JSON.stringify(body))
++          : hashString(body);
++
++        if (inm && inm === etagHash) {
++          ctx.status = 304;
++          ctx.body = null;
++          ctx.set('Etag', etagHash);
++          ctx.set('Cache-Control', 'no-cache');
++        } else if (!inm || inm !== etagHash) {
++          ctx.set('Etag', etagHash);
+         }
+       }
+     }
+@@ -300,7 +289,7 @@ async function getHybridServer(compilation) {
+       });
+ 
+       if (!config.prerender && matchingRoute.isSSR && !matchingRoute.data.static) {
+-        const { handler } = await import(new URL(`./${matchingRoute.filename}`, outputDir));
++        const { handler } = await import(new URL(`./__${matchingRoute.filename}`, outputDir));
+         // TODO passing compilation this way too hacky?
+         // https://github.com/ProjectEvergreen/greenwood/issues/1008
+         const response = await handler(request, compilation);
+diff --git a/node_modules/@greenwood/cli/src/plugins/renderer/plugin-renderer-default.js b/node_modules/@greenwood/cli/src/plugins/renderer/plugin-renderer-default.js
+index 16203be..534384f 100644
+--- a/node_modules/@greenwood/cli/src/plugins/renderer/plugin-renderer-default.js
++++ b/node_modules/@greenwood/cli/src/plugins/renderer/plugin-renderer-default.js
+@@ -3,7 +3,7 @@ const greenwoodPluginRendererDefault = {
+   name: 'plugin-renderer-default',
+   provider: () => {
+     return {
+-      workerUrl: new URL('../../lib/ssr-route-worker.js', import.meta.url)
++      executeModuleUrl: new URL('../../lib/execute-route-module.js', import.meta.url)
+     };
+   }
+ };
+diff --git a/node_modules/@greenwood/cli/src/plugins/resource/plugin-standard-html.js b/node_modules/@greenwood/cli/src/plugins/resource/plugin-standard-html.js
+index 52fbd8e..11f81d1 100644
+--- a/node_modules/@greenwood/cli/src/plugins/resource/plugin-standard-html.js
++++ b/node_modules/@greenwood/cli/src/plugins/resource/plugin-standard-html.js
+@@ -105,10 +105,10 @@ class StandardHtmlResource extends ResourceInterface {
+ 
+     if (matchingRoute.isSSR) {
+       const routeModuleLocationUrl = new URL(`./${matchingRoute.filename}`, pagesDir);
+-      const routeWorkerUrl = this.compilation.config.plugins.find(plugin => plugin.type === 'renderer').provider().workerUrl;
++      const routeWorkerUrl = this.compilation.config.plugins.find(plugin => plugin.type === 'renderer').provider().executeModuleUrl;
+ 
+       await new Promise((resolve, reject) => {
+-        const worker = new Worker(routeWorkerUrl);
++        const worker = new Worker(new URL('../../lib/ssr-route-worker.js', import.meta.url));
+ 
+         worker.on('message', (result) => {
+           if (result.template) {
+@@ -143,9 +143,10 @@ class StandardHtmlResource extends ResourceInterface {
+         });
+ 
+         worker.postMessage({
++          executeModuleUrl: routeWorkerUrl.href,
+           moduleUrl: routeModuleLocationUrl.href,
+           compilation: JSON.stringify(this.compilation),
+-          route: matchingRoute.path
++          page: JSON.stringify(matchingRoute)
+         });
+       });
+     }
+@@ -212,6 +213,7 @@ class StandardHtmlResource extends ResourceInterface {
+   }
+ 
+   async shouldOptimize(url, response) {
++    // TOOD should be .indexOf(this.contentType) === 0
+     return response.headers.get('Content-Type').indexOf(this.contentType) >= 0;
+   }
+ 
