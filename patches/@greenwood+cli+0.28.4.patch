@@ -48,10 +48,10 @@ index 8c3642a..2cc5821 100644
  
 diff --git a/node_modules/@greenwood/cli/src/lib/execute-route-module.js b/node_modules/@greenwood/cli/src/lib/execute-route-module.js
 new file mode 100644
-index 0000000..b1c1c63
+index 0000000..082dd34
 --- /dev/null
 +++ b/node_modules/@greenwood/cli/src/lib/execute-route-module.js
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,47 @@
 +import { renderToString, renderFromHTML } from 'wc-compiler';
 +
 +// TODO simplify this API signature (lot of things could be combined)
@@ -65,6 +65,7 @@ index 0000000..b1c1c63
 +    html: null
 +  };
 +
++  console.log({ moduleUrl });
 +  if (prerender) {
 +    const scriptURLs = scripts.map(scriptFile => new URL(scriptFile));
 +    const { html } = await renderFromHTML(htmlContents, scriptURLs);
@@ -72,6 +73,7 @@ index 0000000..b1c1c63
 +    data.html = html;
 +  } else {
 +    const module = await import(moduleUrl).then(module => module);
++    console.log({ module });
 +    const { getTemplate = null, getBody = null, getFrontmatter = null } = module;
 +
 +    if (module.default) {
@@ -169,7 +171,7 @@ index 39486a5..9adbed1 100644
    if (process.env.__GWD_COMMAND__ === 'build') { // eslint-disable-line no-underscore-dangle
      const userPackageJson = await getPackageJson(context);
 diff --git a/node_modules/@greenwood/cli/src/lifecycles/bundle.js b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
-index 3ad6bf0..9128252 100644
+index 3ad6bf0..5d81e3f 100644
 --- a/node_modules/@greenwood/cli/src/lifecycles/bundle.js
 +++ b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
 @@ -1,6 +1,7 @@
@@ -188,7 +190,7 @@ index 3ad6bf0..9128252 100644
    // TODO context plugins for SSR ?
    // https://github.com/ProjectEvergreen/greenwood/issues/1008
    // const contextPlugins = compilation.config.plugins.filter((plugin) => {
-@@ -182,100 +182,72 @@ async function bundleSsrPages(compilation) {
+@@ -182,100 +182,77 @@ async function bundleSsrPages(compilation) {
    // }).map((plugin) => {
    //   return plugin.provider(compilation);
    // });
@@ -201,7 +203,7 @@ index 3ad6bf0..9128252 100644
 +    const htmlOptimizer = compilation.config.plugins.find(plugin => plugin.name === 'plugin-standard-html').provider(compilation);
 +    const { executeModuleUrl } = compilation.config.plugins.find(plugin => plugin.type === 'renderer').provider();
 +    const { executeRouteModule } = await import(executeModuleUrl);
-+    const { outputDir, pagesDir, scratchDir } = compilation.context;
++    const { pagesDir, scratchDir } = compilation.context;
 +
      for (const page of compilation.graph) {
        if (page.isSSR && !page.data.static) {
@@ -304,10 +306,15 @@ index 3ad6bf0..9128252 100644
 +        await fs.writeFile(entryFileUrl, `
 +          import { executeRouteModule } from '${normalizePathnameForWindows(executeModuleUrl)}';
 +
++          // use a function to explicitly resolve import.meta.url at _runtime_, not build time
++          function getEntryPointUrl(filename) {
++            return new URL(\`./_\${filename}\`, import.meta.url);
++          }
++
 +          export async function handler(request) {
 +            const compilation = JSON.parse('${JSON.stringify(compilation)}');
 +            const page = JSON.parse('${JSON.stringify(page)}');
-+            const moduleUrl = new URL('./_${filename}', '${outputDir.href}');
++            const moduleUrl = getEntryPointUrl('${filename}');
 +            const data = await executeRouteModule({ moduleUrl, compilation, page });
 +            let staticHtml = \`${staticHtml}\`;
 +
@@ -342,7 +349,7 @@ index 3ad6bf0..9128252 100644
        const bundle = await rollup(rollupConfig);
        await bundle.write(rollupConfig.output);
      }
-@@ -309,13 +281,14 @@ const bundleCompilation = async (compilation) => {
+@@ -309,13 +286,14 @@ const bundleCompilation = async (compilation) => {
  
        await Promise.all([
          await bundleApiRoutes(compilation),
