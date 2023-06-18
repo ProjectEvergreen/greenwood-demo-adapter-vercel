@@ -21,10 +21,10 @@
     "develop": "greenwood develop",
     "build": "greenwood build",
     "serve": "greenwood serve",
-    "vercel": "vercel dev"
+    "serve:vercel": "npm run build && vercel dev"
   },
   "devDependencies": {
-    "@greenwood/cli": "~0.28.2",
+    "@greenwood/cli": "~0.28.4",
     "vercel": "^29.3.0"
   }
 }
