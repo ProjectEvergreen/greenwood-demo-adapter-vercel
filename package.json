@@ -21,10 +21,12 @@
     "develop": "greenwood develop",
     "build": "greenwood build",
     "serve": "greenwood serve",
-    "serve:vercel": "npm run build && vercel dev"
+    "serve:vercel": "npm run build && vercel dev",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@greenwood/cli": "~0.28.4",
+    "patch-package": "^7.0.0",
     "vercel": "^29.3.0"
   }
 }
