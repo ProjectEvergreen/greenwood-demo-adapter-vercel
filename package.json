@@ -21,7 +21,7 @@
     "develop": "greenwood develop",
     "build": "greenwood build",
     "serve": "greenwood serve",
-    "serve:vercel": "npm run build && vercel dev",
+    "serve:vercel": "vercel dev",
     "postinstall": "patch-package"
   },
   "devDependencies": {
