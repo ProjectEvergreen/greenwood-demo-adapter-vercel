@@ -12,21 +12,55 @@ index 1dbd30a..a298c90 100644
            await preRenderCompilationWorker(compilation, prerenderPlugin);
          } else {
 diff --git a/node_modules/@greenwood/cli/src/config/rollup.config.js b/node_modules/@greenwood/cli/src/config/rollup.config.js
-index 8c3642a..2cc5821 100644
+index 8c3642a..940a6dc 100644
 --- a/node_modules/@greenwood/cli/src/config/rollup.config.js
 +++ b/node_modules/@greenwood/cli/src/config/rollup.config.js
-@@ -224,10 +224,28 @@ const getRollupConfigForSsr = async (compilation, input) => {
+@@ -130,6 +130,30 @@ function greenwoodSyncPageResourceBundlesPlugin(compilation) {
+   };
+ }
+ 
++// TODO could we use this instead?
++// https://github.com/rollup/rollup/blob/v2.79.1/docs/05-plugin-development.md#resolveimportmeta
++function greenwoodPatchSsrPagesEntryPointRuntimeImport() {
++  return {
++    name: 'greenwood-patch-ssr-pages-entry-point-runtime-import',
++    generateBundle(options, bundle) {
++      Object.keys(bundle).forEach((key) => {
++        if (key.startsWith('__')) {
++          console.log('this is a generated entry point', bundle[key]);
++          // ___GWD_ENTRY_FILE_URL=${filename}___
++          const needle = bundle[key].code.match(/___GWD_ENTRY_FILE_URL=(.*.)___/);
++          if (needle) {
++            const entryPathMatch = needle[1];
++
++            bundle[key].code = bundle[key].code.replace(/'___GWD_ENTRY_FILE_URL=(.*.)___'/, `new URL('./_${entryPathMatch}', import.meta.url)`);
++          } else {
++            console.warn(`Could not find entry path match for bundle => ${ley}`);
++          }
++        }
++      });
++    }
++  };
++}
++
+ const getRollupConfigForScriptResources = async (compilation) => {
+   const { outputDir } = compilation.context;
+   const input = [...compilation.resources.values()]
+@@ -224,10 +248,30 @@ const getRollupConfigForSsr = async (compilation, input) => {
      },
      plugins: [
        greenwoodJsonLoader(),
 -      nodeResolve(),
-+      // TODO should this be used in all configs?
++      // TODO let this through for lit to enable nodeResolve({ preferBuiltins: true })
++      // https://github.com/lit/lit/issues/449
 +      nodeResolve({
 +        preferBuiltins: true
 +      }),
        commonjs(),
-       importMetaAssets()
+-      importMetaAssets()
 -    ]
++      importMetaAssets(),
++      greenwoodPatchSsrPagesEntryPointRuntimeImport() // TODO a little hacky but works for now
 +    ],
 +    onwarn: (errorObj) => {
 +      const { code, message } = errorObj;
@@ -34,7 +68,7 @@ index 8c3642a..2cc5821 100644
 +      switch (code) {
 +
 +        case 'CIRCULAR_DEPENDENCY':
-+          // let this through for lit to enable nodeResolve({ preferBuiltins: true })
++          // TODO let this through for lit to enable nodeResolve({ preferBuiltins: true })
 +          // https://github.com/lit/lit/issues/449
 +          break;
 +        default:
@@ -171,7 +205,7 @@ index 39486a5..9adbed1 100644
    if (process.env.__GWD_COMMAND__ === 'build') { // eslint-disable-line no-underscore-dangle
      const userPackageJson = await getPackageJson(context);
 diff --git a/node_modules/@greenwood/cli/src/lifecycles/bundle.js b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
-index 3ad6bf0..5d81e3f 100644
+index 3ad6bf0..f9d1ad6 100644
 --- a/node_modules/@greenwood/cli/src/lifecycles/bundle.js
 +++ b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
 @@ -1,6 +1,7 @@
@@ -190,7 +224,7 @@ index 3ad6bf0..5d81e3f 100644
    // TODO context plugins for SSR ?
    // https://github.com/ProjectEvergreen/greenwood/issues/1008
    // const contextPlugins = compilation.config.plugins.filter((plugin) => {
-@@ -182,100 +182,77 @@ async function bundleSsrPages(compilation) {
+@@ -182,100 +182,72 @@ async function bundleSsrPages(compilation) {
    // }).map((plugin) => {
    //   return plugin.provider(compilation);
    // });
@@ -306,15 +340,10 @@ index 3ad6bf0..5d81e3f 100644
 +        await fs.writeFile(entryFileUrl, `
 +          import { executeRouteModule } from '${normalizePathnameForWindows(executeModuleUrl)}';
 +
-+          // use a function to explicitly resolve import.meta.url at _runtime_, not build time
-+          function getEntryPointUrl(filename) {
-+            return new URL(\`./_\${filename}\`, import.meta.url);
-+          }
-+
 +          export async function handler(request) {
 +            const compilation = JSON.parse('${JSON.stringify(compilation)}');
 +            const page = JSON.parse('${JSON.stringify(page)}');
-+            const moduleUrl = getEntryPointUrl('${filename}');
++            const moduleUrl = '___GWD_ENTRY_FILE_URL=${filename}___';
 +            const data = await executeRouteModule({ moduleUrl, compilation, page });
 +            let staticHtml = \`${staticHtml}\`;
 +
@@ -349,7 +378,7 @@ index 3ad6bf0..5d81e3f 100644
        const bundle = await rollup(rollupConfig);
        await bundle.write(rollupConfig.output);
      }
-@@ -309,13 +286,14 @@ const bundleCompilation = async (compilation) => {
+@@ -309,13 +281,14 @@ const bundleCompilation = async (compilation) => {
  
        await Promise.all([
          await bundleApiRoutes(compilation),
