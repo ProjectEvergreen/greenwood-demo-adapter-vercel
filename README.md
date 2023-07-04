@@ -28,7 +28,7 @@ This repo aims to demonstrate a couple of Greenwood's features ([API Routes](htt
 |Feature    |Greenwood |Serverless|Edge|
 |---------- |----------|----------|----|
 |API Routes |   ✅     |  ✅       | ❓ |
-|SSR Pages  |   ✅     |  ❓       | ❓ |
+|SSR Pages  |   ✅     |  ✅       | ❓ |
 
 You can see the live demo at [https://greenwood-demo-adapter-vercel.vercel.app/](https://greenwood-demo-adapter-vercel.vercel.app/).
 
