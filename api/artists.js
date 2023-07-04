@@ -1,5 +1,5 @@
 // TODO should use src or public?  depends on dev vs production mode?
-import { handler as artists } from '../public/artists.js';
+import { handler as artists } from '../public/__artists.js';
 
 export default async function handler (request, response) {
   const { url, headers } = request;

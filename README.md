@@ -66,3 +66,4 @@ TODO
     - should use _src/_ or _public/_?  depends on dev vs production mode?  Interestingly, the manual way only worked deployed when using _public/_
 1. [ ] Make sure to spread all headers / response properties in netlify functions adapter output
 1. [ ] Keep it as an experimental feature for 1.0 (or per platform?)
+1. [ ] Will SSR pages need access to the request object?
