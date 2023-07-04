@@ -15,8 +15,7 @@ To run locally
 You can now run these npm scripts
 - `npm run dev` - Start the demo with Greenwood local dev server
 - `npm run serve` - Start the demo with a production Greenwood build
-- `npm run vercel` - Start a local Vercel server with [Vercel CLI](https://vercel.com/docs/cli
-) (Greenwood live reload not supported)
+- `npm run serve:vercel` - Generate a production build and start a local Vercel server with the [Vercel CLI](https://vercel.com/docs/cli) for local testing. (Greenwood live reload not supported)
 
 > 👉 **Note**: _If deploying to your own Vercel instance, make sure you set the NodeJS version to `18.x` in your Vercel project's General settings_.
 
@@ -29,7 +28,7 @@ This repo aims to demonstrate a couple of Greenwood's features ([API Routes](htt
 |Feature    |Greenwood |Serverless|Edge|
 |---------- |----------|----------|----|
 |API Routes |   ✅     |  ✅       | ❓ |
-|SSR Pages  |   ✅     |  ❓       | ❓ |
+|SSR Pages  |   ✅     |  ✅       | ❓ |
 
 You can see the live demo at [https://greenwood-demo-adapter-vercel.vercel.app/](https://greenwood-demo-adapter-vercel.vercel.app/).
 
@@ -44,7 +43,7 @@ The serverless demos include the following examples:
 
 ### SSR Pages
 
-TODO
+- ✅ [`/artists`](https://greenwood-demo-adapter-vercel.vercel.app/artists) - SSR page for rendering Greenwood pages.  This implementation does not work because of `import.meta.url` (see above section on APIs)
 
 ## Edge
 
@@ -61,8 +60,10 @@ TODO
 ## Adapter Implementation Thoughts / Questions
 
 1. [ ] Will need to generate the _api/_ folder on-demand / as part of the build instead of hardcoding, likely from _manifest.json_
+1. [ ] How to manage vercel configuration (e.g. redirects for pages)?  Auto generate, auto merge into _vercel.json_?
 1. [ ] How to best manage local dev (runtime "compliance")
     - proxy vercel cli dev option?
     - should use _src/_ or _public/_?  depends on dev vs production mode?  Interestingly, the manual way only worked deployed when using _public/_
 1. [ ] Make sure to spread all headers / response properties in netlify functions adapter output
 1. [ ] Keep it as an experimental feature for 1.0 (or per platform?)
+1. [ ] Will SSR pages need access to the request object?

@@ -1,4 +1,8 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "rewrites": [{
+    "source": "/artists/",
+    "destination": "/api/artists"
+  }]
 }
