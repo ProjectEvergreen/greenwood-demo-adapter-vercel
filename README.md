@@ -43,7 +43,7 @@ The serverless demos include the following examples:
 
 ### SSR Pages
 
-- ✅ [`/artists`](https://greenwood-demo-adapter-vercel.vercel.app/artists) - SSR page for rendering Greenwood pages.  This implementation does not work because of `import.meta.url` (see above section on APIs)
+- ✅ [`/artists`](https://greenwood-demo-adapter-vercel.vercel.app/artists) - SSR page for rendering Greenwood pages.
 
 ## Edge
 
