@@ -35,6 +35,7 @@ async function vercelAdapter(compilation) {
   }
 
   console.log({ ssrPages, apiRoutes, adapterOutputUrl });
+  console.log('CWD (import.neta.url)????', import.meta.url);
 
   for (const page of ssrPages) {
     const { id } = page;
