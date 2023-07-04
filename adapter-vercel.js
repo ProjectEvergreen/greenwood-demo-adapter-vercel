@@ -25,6 +25,7 @@ function generateOutputFormat(id, type) {
 }
 
 async function vercelAdapter(compilation) {
+  console.log('ENTER vercelAdapter');
   const adapterOutputUrl = new URL('./api/', compilation.context.projectDirectory);
   const ssrPages = compilation.graph.filter(page => page.isSSR);
   const apiRoutes = compilation.manifest.apis;
@@ -32,6 +33,8 @@ async function vercelAdapter(compilation) {
   if (!await checkResourceExists(adapterOutputUrl)) {
     await fs.mkdir(adapterOutputUrl);
   }
+
+  console.log({ ssrPages, apiRoutes });
 
   for (const page of ssrPages) {
     const { id } = page;
