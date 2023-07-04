@@ -21,7 +21,8 @@
     "develop": "greenwood develop",
     "build": "greenwood build",
     "serve": "greenwood serve",
-    "serve:vercel": "vercel dev"
+    "serve:vercel": "vercel dev",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@greenwood/cli": "~0.29.0-alpha.0",
