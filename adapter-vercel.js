@@ -34,7 +34,7 @@ async function vercelAdapter(compilation) {
     await fs.mkdir(adapterOutputUrl);
   }
 
-  console.log({ ssrPages, apiRoutes });
+  console.log({ ssrPages, apiRoutes, adapterOutputUrl });
 
   for (const page of ssrPages) {
     const { id } = page;
