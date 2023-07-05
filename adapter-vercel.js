@@ -34,6 +34,7 @@ async function vercelAdapter(compilation) {
 
   if (!await checkResourceExists(adapterOutputUrl)) {
     await fs.mkdir(adapterOutputUrl, { recursive: true });
+    await fs.mkdir(new URL('./static/', adapterOutputUrl), { recursive: true });
   }
 
   await fs.writeFile(new URL('./.vercel/output/config.json', compilation.context.projectDirectory), JSON.stringify({
@@ -68,6 +69,14 @@ async function vercelAdapter(compilation) {
       handler: 'index.js',
     }));
   }
+
+  await fs.cp(
+    compilation.context.outputDir,
+    new URL('./.vercel/output/static/', compilation.context.projectDirectory),
+    {
+      recursive: true
+    }
+  )
 }
 
 const greenwoodPluginAdapterVercel = (options = {}) => [{
