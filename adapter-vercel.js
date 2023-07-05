@@ -36,6 +36,10 @@ async function vercelAdapter(compilation) {
     await fs.mkdir(adapterOutputUrl, { recursive: true });
   }
 
+  await fs.writeFile(new URL('./.vercel/output/config.json', compilation.context.projectDirectory), JSON.stringify({
+    'version': 3
+  }));
+
   console.log({ ssrPages, apiRoutes, adapterOutputUrl });
   console.log('compilation.context.outputDir ????', compilation.context.outputDir);
   console.log('CWD (import.neta.url)????', import.meta.url);
