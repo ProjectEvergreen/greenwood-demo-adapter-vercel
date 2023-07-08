@@ -9,30 +9,20 @@ function generateOutputFormat(id, type) {
   // TODO do all these things
   // https://github.com/vercel/examples/tree/main/build-output-api/serverless-functions
   return `
-    // import { handler as ${id} } from './${id}.js';
+    import { handler as ${id} } from './${id}.js';
 
-    console.log('top of api handler file for ${id}!');
-
-    export default function handler (request, response) {
+    export default async function handler (request, response) {
       console.log('enter api handler for ${id}!');
-      console.log({ request, response });
-      // const { url, headers } = request;
-      // const req = new Request(new URL(url, \`http://\${headers.host}\`), {
-      //   headers: new Headers(headers)
-      // });
-      // const res = await ${id}(req);
+      const { url, headers } = request;
+      const req = new Request(new URL(url, \`http://\${headers.host}\`), {
+        headers: new Headers(headers)
+      });
+      const res = await ${id}(req);
 
-      // // TODO need to handle all Response properties like headers
-      // // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
-      // response.status(res.status);
-      // response.send(await res.text());
-      // response.status(200);
-      response.send('it works!');
-      // response.status(200).json({
-      //   body: request.body,
-      //   query: request.query,
-      //   cookies: request.cookies,
-      // });
+      // TODO need to handle all Response properties like headers
+      // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
+      response.status(res.status);
+      response.send(await res.text());
     }
   `;
 }
@@ -46,7 +36,6 @@ async function vercelAdapter(compilation) {
 
   if (!await checkResourceExists(adapterOutputUrl)) {
     await fs.mkdir(adapterOutputUrl, { recursive: true });
-    // await fs.mkdir(new URL('./static/', adapterOutputUrl), { recursive: true });
   }
 
   await fs.writeFile(new URL('./.vercel/output/config.json', projectDirectory), JSON.stringify({
@@ -57,12 +46,6 @@ async function vercelAdapter(compilation) {
   console.log('compilation.context.outputDir ????', outputDir);
   console.log('CWD (import.meta.url)????', import.meta.url);
 
-  // "runtime": "nodejs16.x",
-  // "handler": "serve.js",
-  // "maxDuration": 3,
-  // "launcherType": "Nodejs",
-  // "shouldAddHelpers": true,
-  // "shouldAddSourcemapSupport": true
   for (const page of ssrPages) {
     const { id } = page;
     const outputFormat = generateOutputFormat(id, 'page');
