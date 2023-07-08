@@ -4,12 +4,12 @@ import { checkResourceExists } from '@greenwood/cli/src/lib/resource-utils.js';
 function generateOutputFormat(id, type) {
   const path = type === 'page'
     ? `__${id}`
-    : `api/${id}`;
+    : id;
 
   // TODO do all these things
   // https://github.com/vercel/examples/tree/main/build-output-api/serverless-functions
   return `
-    import { handler as ${id} } from './${id}.js';
+    import { handler as ${id} } from './${path}.js';
 
     export default async function handler (request, response) {
       console.log('enter api handler for ${id}!');
@@ -49,13 +49,28 @@ async function vercelAdapter(compilation) {
   for (const page of ssrPages) {
     const { id } = page;
     const outputFormat = generateOutputFormat(id, 'page');
+    const outputRoot = new URL(`./${id}.func/`, adapterOutputUrl);
 
-    await fs.mkdir(new URL(`./${id}.func/`, adapterOutputUrl), { recursive: true });
-    await fs.writeFile(new URL(`./${id}.func/index.js`, adapterOutputUrl), outputFormat);
-    await fs.writeFile(new URL(`./${id}.func/.vc-config.json`, adapterOutputUrl), JSON.stringify({
+    await fs.mkdir(outputRoot, { recursive: true });
+    await fs.writeFile(new URL(`./index.js`, outputRoot), outputFormat);
+    await fs.writeFile(new URL(`./.vc-config.json`, outputRoot), JSON.stringify({
       runtime: 'nodejs18.x',
       handler: 'index.js',
+      launcherType: 'Nodejs',
+      shouldAddHelpers: true
     }));
+
+    await fs.cp(
+      new URL(`./_${id}.js`, outputDir),
+      new URL(`./_${id}.js`, outputRoot),
+      { recursive: true }
+    );
+
+    await fs.cp(
+      new URL(`./__${id}.js`, outputDir),
+      new URL(`./__${id}.js`, outputRoot),
+      { recursive: true }
+    );
   }
 
   // public/api/
@@ -74,14 +89,14 @@ async function vercelAdapter(compilation) {
       runtime: 'nodejs18.x',
       handler: 'index.js',
       launcherType: 'Nodejs',
-      shouldAddHelpers: true,
+      shouldAddHelpers: true
     }));
 
     // TODO ideally all functions would be self contained
     // https://github.com/ProjectEvergreen/greenwood/issues/1118
     await fs.cp(
       new URL(`./api/${id}.js`, outputDir),
-      new URL(`${id}.js`, outputRoot),
+      new URL(`./${id}.js`, outputRoot),
       { recursive: true }
     );
     await fs.cp(
