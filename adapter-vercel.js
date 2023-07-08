@@ -9,7 +9,7 @@ function generateOutputFormat(id, type) {
   // TODO do all these things
   // https://github.com/vercel/examples/tree/main/build-output-api/serverless-functions
   return `
-    import { handler as ${id} } from '../../../../public/${path}.js';
+    import { handler as ${id} } from './${id}.js';
 
     export default async function handler (request, response) {
       const { url, headers } = request;
@@ -28,7 +28,8 @@ function generateOutputFormat(id, type) {
 
 async function vercelAdapter(compilation) {
   console.log('ENTER vercelAdapter');
-  const adapterOutputUrl = new URL('./.vercel/output/functions/', compilation.context.projectDirectory);
+  const { outputDir, projectDirectory } = compilation.context;
+  const adapterOutputUrl = new URL('./.vercel/output/functions/', projectDirectory);
   const ssrPages = compilation.graph.filter(page => page.isSSR);
   const apiRoutes = compilation.manifest.apis;
 
@@ -37,13 +38,13 @@ async function vercelAdapter(compilation) {
     await fs.mkdir(new URL('./static/', adapterOutputUrl), { recursive: true });
   }
 
-  await fs.writeFile(new URL('./.vercel/output/config.json', compilation.context.projectDirectory), JSON.stringify({
+  await fs.writeFile(new URL('./.vercel/output/config.json', projectDirectory), JSON.stringify({
     'version': 3
   }));
 
   console.log({ ssrPages, apiRoutes, adapterOutputUrl });
-  console.log('compilation.context.outputDir ????', compilation.context.outputDir);
-  console.log('CWD (import.neta.url)????', import.meta.url);
+  console.log('compilation.context.outputDir ????', outputDir);
+  console.log('CWD (import.meta.url)????', import.meta.url);
 
   for (const page of ssrPages) {
     const { id } = page;
@@ -61,18 +62,32 @@ async function vercelAdapter(compilation) {
   for (const [key] of apiRoutes) {
     const id = key.replace('/api/', '');
     const outputFormat = generateOutputFormat(id, 'api');
+    const outputRoot = new URL(`./api/${id}.func/`, adapterOutputUrl);
 
-    await fs.mkdir(new URL(`./api/${id}.func/`, adapterOutputUrl), { recursive: true });
-    await fs.writeFile(new URL(`./api/${id}.func/index.js`, adapterOutputUrl), outputFormat);
-    await fs.writeFile(new URL(`./api/${id}.func/.vc-config.json`, adapterOutputUrl), JSON.stringify({
+    await fs.mkdir(outputRoot, { recursive: true });
+    await fs.writeFile(new URL(`./index.js`, outputRoot), outputFormat);
+    await fs.writeFile(new URL(`./.vc-config.json`, outputRoot), JSON.stringify({
       runtime: 'nodejs18.x',
       handler: 'index.js',
     }));
+
+    // TODO ideally all functions would be self contained
+    // https://github.com/ProjectEvergreen/greenwood/issues/1118
+    await fs.cp(
+      new URL(`./api/${id}.js`, outputDir),
+      new URL(`${id}.js`, outputRoot),
+      { recursive: true }
+    );
+    await fs.cp(
+      new URL(`./api/assets/`, outputDir),
+      new URL('./assets/', outputRoot),
+      { recursive: true }
+    );
   }
 
   await fs.cp(
-    compilation.context.outputDir,
-    new URL('./.vercel/output/static/', compilation.context.projectDirectory),
+    outputDir,
+    new URL('./.vercel/output/static/', projectDirectory),
     {
       recursive: true
     }
