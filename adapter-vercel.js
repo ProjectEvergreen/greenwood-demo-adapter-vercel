@@ -93,13 +93,13 @@ async function vercelAdapter(compilation) {
     );
   }
 
-  await fs.cp(
-    outputDir,
-    new URL('./.vercel/output/static/', projectDirectory),
-    {
-      recursive: true
-    }
-  )
+  // await fs.cp(
+  //   outputDir,
+  //   new URL('./.vercel/output/static/', projectDirectory),
+  //   {
+  //     recursive: true
+  //   }
+  // )
 }
 
 const greenwoodPluginAdapterVercel = (options = {}) => [{
