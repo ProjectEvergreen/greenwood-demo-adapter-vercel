@@ -9,19 +9,22 @@ function generateOutputFormat(id, type) {
   // TODO do all these things
   // https://github.com/vercel/examples/tree/main/build-output-api/serverless-functions
   return `
-    import { handler as ${id} } from './${id}.js';
+    // import { handler as ${id} } from './${id}.js';
 
     export default async function handler (request, response) {
-      const { url, headers } = request;
-      const req = new Request(new URL(url, \`http://\${headers.host}\`), {
-        headers: new Headers(headers)
-      });
-      const res = await ${id}(req);
+      console.log('enter api handler!');
+      // const { url, headers } = request;
+      // const req = new Request(new URL(url, \`http://\${headers.host}\`), {
+      //   headers: new Headers(headers)
+      // });
+      // const res = await ${id}(req);
 
-      // TODO need to handle all Response properties like headers
-      // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
-      response.status(res.status);
-      response.send(await res.text());
+      // // TODO need to handle all Response properties like headers
+      // // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
+      // response.status(res.status);
+      // response.send(await res.text());
+      response.status(200);
+      response.send('it works!');
     }
   `;
 }
@@ -35,7 +38,7 @@ async function vercelAdapter(compilation) {
 
   if (!await checkResourceExists(adapterOutputUrl)) {
     await fs.mkdir(adapterOutputUrl, { recursive: true });
-    await fs.mkdir(new URL('./static/', adapterOutputUrl), { recursive: true });
+    // await fs.mkdir(new URL('./static/', adapterOutputUrl), { recursive: true });
   }
 
   await fs.writeFile(new URL('./.vercel/output/config.json', projectDirectory), JSON.stringify({
