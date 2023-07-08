@@ -46,6 +46,9 @@ async function vercelAdapter(compilation) {
   console.log('compilation.context.outputDir ????', outputDir);
   console.log('CWD (import.meta.url)????', import.meta.url);
 
+  const files = await fs.readdir(outputDir);
+  const isExecuteRouteModule = files.find(file => file.startsWith('execute-route-module'));
+
   for (const page of ssrPages) {
     const { id } = page;
     const outputFormat = generateOutputFormat(id, 'page');
@@ -74,6 +77,13 @@ async function vercelAdapter(compilation) {
       new URL(`./__${id}.js`, outputRoot),
       { recursive: true }
     );
+
+    // TODO quick hack to make serverless pages are fully self-contained
+    // https://github.com/ProjectEvergreen/greenwood/issues/1118
+    await fs.cp(
+      new URL(`./${isExecuteRouteModule}`, outputDir),
+      new URL(`./${isExecuteRouteModule}`, outputRoot),
+    )
   }
 
   // public/api/
