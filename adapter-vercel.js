@@ -86,10 +86,12 @@ async function vercelAdapter(compilation) {
     await fs.writeFile(new URL(`./package.json`, outputRoot), JSON.stringify({
       type: 'module'
     }));
+    // https://vercel.com/docs/build-output-api/v3/primitives#config-example
     await fs.writeFile(new URL(`./.vc-config.json`, outputRoot), JSON.stringify({
       runtime: 'nodejs18.x',
       handler: 'index.js',
-      launcherType: 'Nodejs'
+      launcherType: 'Nodejs',
+      shouldAddHelpers: true,
     }));
 
     // TODO ideally all functions would be self contained
