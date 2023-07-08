@@ -11,8 +11,10 @@ function generateOutputFormat(id, type) {
   return `
     // import { handler as ${id} } from './${id}.js';
 
+    console.log('top of api handler file for ${id}!');
+
     export default function handler (request, response) {
-      console.log('enter api handler!');
+      console.log('enter api handler for ${id}!');
       // const { url, headers } = request;
       // const req = new Request(new URL(url, \`http://\${headers.host}\`), {
       //   headers: new Headers(headers)
