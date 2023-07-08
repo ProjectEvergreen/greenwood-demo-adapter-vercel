@@ -56,6 +56,12 @@ async function vercelAdapter(compilation) {
   console.log('compilation.context.outputDir ????', outputDir);
   console.log('CWD (import.meta.url)????', import.meta.url);
 
+  // "runtime": "nodejs16.x",
+  // "handler": "serve.js",
+  // "maxDuration": 3,
+  // "launcherType": "Nodejs",
+  // "shouldAddHelpers": true,
+  // "shouldAddSourcemapSupport": true
   for (const page of ssrPages) {
     const { id } = page;
     const outputFormat = generateOutputFormat(id, 'page');
@@ -79,6 +85,7 @@ async function vercelAdapter(compilation) {
     await fs.writeFile(new URL(`./.vc-config.json`, outputRoot), JSON.stringify({
       runtime: 'nodejs18.x',
       handler: 'index.js',
+      launcherType: 'Nodejs'
     }));
 
     // TODO ideally all functions would be self contained
