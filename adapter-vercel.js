@@ -1,3 +1,5 @@
+// https://vercel.com/docs/build-output-api/v3/
+// https://github.com/vercel/examples/tree/main/build-output-api/serverless-functions
 import fs from 'fs/promises';
 import { checkResourceExists } from '@greenwood/cli/src/lib/resource-utils.js';
 
@@ -6,8 +8,6 @@ function generateOutputFormat(id, type) {
     ? `__${id}`
     : id;
 
-  // TODO do all these things
-  // https://github.com/vercel/examples/tree/main/build-output-api/serverless-functions
   return `
     import { handler as ${id} } from './${path}.js';
 
@@ -79,11 +79,14 @@ async function vercelAdapter(compilation) {
     );
 
     // TODO quick hack to make serverless pages are fully self-contained
+    // for example, execture-route-module.js will only get code split if there are more than one SSR pages
     // https://github.com/ProjectEvergreen/greenwood/issues/1118
-    await fs.cp(
-      new URL(`./${isExecuteRouteModule}`, outputDir),
-      new URL(`./${isExecuteRouteModule}`, outputRoot),
-    )
+    if (isExecuteRouteModule) {
+      await fs.cp(
+        new URL(`./${isExecuteRouteModule}`, outputDir),
+        new URL(`./${isExecuteRouteModule}`, outputRoot),
+      )
+    }
   }
 
   // public/api/
