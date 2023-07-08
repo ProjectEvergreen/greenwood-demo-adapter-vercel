@@ -11,7 +11,7 @@ function generateOutputFormat(id, type) {
   return `
     // import { handler as ${id} } from './${id}.js';
 
-    export default async function handler (request, response) {
+    export default function handler (request, response) {
       console.log('enter api handler!');
       // const { url, headers } = request;
       // const req = new Request(new URL(url, \`http://\${headers.host}\`), {
@@ -23,8 +23,13 @@ function generateOutputFormat(id, type) {
       // // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
       // response.status(res.status);
       // response.send(await res.text());
-      response.status(200);
-      response.send('it works!');
+      // response.status(200);
+      // response.send('it works!');
+      response.status(200).json({
+        body: request.body,
+        query: request.query,
+        cookies: request.cookies,
+      });
     }
   `;
 }
