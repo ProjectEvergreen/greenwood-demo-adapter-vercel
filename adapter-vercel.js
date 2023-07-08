@@ -8,26 +8,30 @@ function generateOutputFormat(id, type) {
 
   // TODO do all these things
   // https://github.com/vercel/examples/tree/main/build-output-api/serverless-functions
-  return ` export default function handler (request, response) {
-  console.log('enter api handler!');
-  // const { url, headers } = request;
-  // const req = new Request(new URL(url, \`http://\${headers.host}\`), {
-  //   headers: new Headers(headers)
-  // });
-  // const res = await ${id}(req);
+  return `
+    // import { handler as ${id} } from './${id}.js';
 
-  // // TODO need to handle all Response properties like headers
-  // // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
-  // response.status(res.status);
-  // response.send(await res.text());
-  // response.status(200);
-  // response.send('it works!');
-  response.status(200).json({
-    body: request.body,
-    query: request.query,
-    cookies: request.cookies,
-  });
-}`;
+    export default function handler (request, response) {
+      console.log('enter api handler!');
+      // const { url, headers } = request;
+      // const req = new Request(new URL(url, \`http://\${headers.host}\`), {
+      //   headers: new Headers(headers)
+      // });
+      // const res = await ${id}(req);
+
+      // // TODO need to handle all Response properties like headers
+      // // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
+      // response.status(res.status);
+      // response.send(await res.text());
+      // response.status(200);
+      // response.send('it works!');
+      response.status(200).json({
+        body: request.body,
+        query: request.query,
+        cookies: request.cookies,
+      });
+    }
+  `;
 }
 
 async function vercelAdapter(compilation) {
