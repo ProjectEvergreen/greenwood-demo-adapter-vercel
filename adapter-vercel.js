@@ -82,6 +82,9 @@ async function vercelAdapter(compilation) {
 
     await fs.mkdir(outputRoot, { recursive: true });
     await fs.writeFile(new URL(`./index.js`, outputRoot), outputFormat);
+    await fs.writeFile(new URL(`./package.json`, outputRoot), JSON.stringify({
+      type: 'module'
+    }));
     await fs.writeFile(new URL(`./.vc-config.json`, outputRoot), JSON.stringify({
       runtime: 'nodejs18.x',
       handler: 'index.js',
