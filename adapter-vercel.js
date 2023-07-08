@@ -119,6 +119,7 @@ async function vercelAdapter(compilation) {
     );
   }
 
+  // static assets / build
   await fs.cp(
     outputDir,
     new URL('./.vercel/output/static/', projectDirectory),
