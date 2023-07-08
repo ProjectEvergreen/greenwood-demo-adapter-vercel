@@ -15,6 +15,7 @@ function generateOutputFormat(id, type) {
 
     export default function handler (request, response) {
       console.log('enter api handler for ${id}!');
+      console.log({ request, response });
       // const { url, headers } = request;
       // const req = new Request(new URL(url, \`http://\${headers.host}\`), {
       //   headers: new Headers(headers)
@@ -26,12 +27,12 @@ function generateOutputFormat(id, type) {
       // response.status(res.status);
       // response.send(await res.text());
       // response.status(200);
-      // response.send('it works!');
-      response.status(200).json({
-        body: request.body,
-        query: request.query,
-        cookies: request.cookies,
-      });
+      response.send('it works!');
+      // response.status(200).json({
+      //   body: request.body,
+      //   query: request.query,
+      //   cookies: request.cookies,
+      // });
     }
   `;
 }
