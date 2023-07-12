@@ -12,7 +12,7 @@ export default class Card extends HTMLElement {
       <div>
         <h1>${title}</h1> 
         <button onclick="this.parentNode.parentNode.selectArtist()">View Artist Details</button>
-        <img src="${thumbnail}" loading="lazy" width="50%">
+        <img src="${thumbnail}" loading="lazy" width="25%">
         <hr/>
       </div>
     `;

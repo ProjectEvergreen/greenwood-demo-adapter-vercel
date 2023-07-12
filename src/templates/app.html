@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og:http://ogp.me/ns#">
+
+  <head>
+    <title>Greenwood Demo - Vercel Adapter</title>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="icon" href="/favicon.ico"/>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro">
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        border: 0;
+        font-family: 'Source Sans Pro', serif;
+        line-height: 1.4;
+      }
+
+      header, footer {
+        color: white;
+        background-color: rgb(25, 42, 39);
+        text-align: center;
+        height: 50px;
+        padding: 30px 0 0;
+      }
+
+      a {
+        color: white;
+      }
+
+      header nav ul {
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+
+      header nav ul li {
+        display: inline;
+      }
+
+      main {
+        text-align: center;
+        min-height: 100vh;
+      }
+
+      h2 {
+        text-align: center;
+        text-decoration: underline;
+      }
+    </style>
+
+    <script type="module" src="./components/card.js"></script>
+  </head>
+
+  <body>
+    <header>
+      <nav>
+        <ul>
+          <li><a href="/">Home</a> | </li>
+          <li><a href="/artists/">Artists</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Demos</h1>
+      <page-outlet></page-outlet>
+    </main>
+
+    <footer>
+      <p>Greenwood</p>
+    </footer>
+
+  </body>
+
+</html>
