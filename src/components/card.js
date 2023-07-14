@@ -5,17 +5,22 @@ export default class Card extends HTMLElement {
   }
 
   connectedCallback() {
-    const thumbnail = this.getAttribute('thumbnail');
-    const title = this.getAttribute('title');
+    if (!this.shadowRoot) {
+      const thumbnail = this.getAttribute('thumbnail');
+      const title = this.getAttribute('title');
+      const template = document.createElement('template');
 
-    this.innerHTML = `
-      <div>
-        <h1>${title}</h1> 
-        <button onclick="this.parentNode.parentNode.selectArtist()">View Artist Details</button>
-        <img src="${thumbnail}" loading="lazy" width="25%">
-        <hr/>
-      </div>
-    `;
+      template.innerHTML = `
+        <div>
+          <h1>${title}</h1>
+          <button onclick="this.parentNode.parentNode.host.selectArtist()">View Artist Details</button>
+          <img src="${thumbnail}" loading="lazy" width="25%">
+          <hr/>
+        </div>
+      `;
+      this.attachShadow({ mode: 'open' });
+      this.shadowRoot.appendChild(template.content.cloneNode(true));
+    }
   }
 }
 
