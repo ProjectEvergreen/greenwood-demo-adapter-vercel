@@ -59,7 +59,7 @@ TODO
 
 ## Adapter Implementation Thoughts / Questions
 
-1. [ ] Will need to generate the _api/_ folder on-demand / as part of the build instead of hardcoding, likely from _manifest.json_
+1. [x] Will need to generate the _api/_ folder on-demand / as part of the build instead of hardcoding, likely from _manifest.json_
 1. [ ] How to manage vercel configuration (e.g. redirects for pages)?  Auto generate, auto merge into _vercel.json_?
 1. [ ] How to best manage local dev (runtime "compliance")
     - proxy vercel cli dev option?
