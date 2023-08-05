@@ -26,8 +26,8 @@ export default class Card extends HTMLElement {
             background-color: #fff;
           }
           button {
-            background: #3c384d;
-            color: white;
+            background: var(--color-accent);
+            color: var(--color-white);
             padding: 1rem 2rem;
             border: 0;
             font-size: 1rem;
