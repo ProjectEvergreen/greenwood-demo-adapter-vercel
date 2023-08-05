@@ -17,9 +17,11 @@ export default class ArtistsPage extends HTMLElement {
     }).join('');
 
     this.innerHTML = `
-      <a href="/">&lt; Back</a>
+      <p>Owen - include text brefily explaining what this is doing here.</p>
       <h1>List of Artists: ${artists.length}</h1>
-      ${html}
+      <div class="artists-cards-contianer">
+        ${html}
+      </div>
     `;
   }
 }
