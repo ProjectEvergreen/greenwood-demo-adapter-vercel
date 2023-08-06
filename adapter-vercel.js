@@ -14,13 +14,16 @@ function generateOutputFormat(id, type) {
 
     export default async function handler (request, response) {
       const { url, headers } = request;
-      console.log({ request });
-      console.log({ response });
+      console.log('request', { request });
+      console.log('response', { response });
       const req = new Request(new URL(url, \`http://\${headers.host}\`), {
         headers: new Headers(headers)
       });
       const res = await ${id}(req);
-
+      
+      res.headers.forEach((value, key) => {
+        response.setHeader(key, value);
+      });
       response.status(res.status);
       response.send(await res.text());
     }
