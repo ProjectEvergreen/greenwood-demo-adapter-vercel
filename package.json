@@ -20,8 +20,7 @@
   "scripts": {
     "develop": "greenwood develop",
     "build": "greenwood build",
-    "serve": "greenwood serve",
-    "postinstall": "patch-package"
+    "serve": "greenwood serve"
   },
   "devDependencies": {
     "@greenwood/cli": "~0.29.0-alpha.1",
