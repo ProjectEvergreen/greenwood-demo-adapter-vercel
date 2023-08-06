@@ -7,24 +7,18 @@ function generateOutputFormat(id, type) {
     ? `__${id}`
     : id;
 
-  // TODO need to handle all Response properties like headers
-  // https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-request-and-response-objects
   return `
     import { handler as ${id} } from './${path}.js';
 
     export default async function handler (request, response) {
       const { url, headers, method } = request;
-      console.log({ url, headers, method });
-      // console.log('response', { response });
       const req = new Request(new URL(url, \`http://\${headers.host}\`), {
         headers: new Headers(headers),
         method
       });
       const res = await ${id}(req);
-      
-      console.log('headers!', res.headers);
+
       res.headers.forEach((value, key) => {
-        console.log({ value, key });
         response.setHeader(key, value);
       });
       response.status(res.status);
