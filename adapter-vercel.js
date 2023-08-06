@@ -17,7 +17,8 @@ function generateOutputFormat(id, type) {
       console.log({ url, headers, method });
       // console.log('response', { response });
       const req = new Request(new URL(url, \`http://\${headers.host}\`), {
-        headers: new Headers(headers)
+        headers: new Headers(headers),
+        method
       });
       const res = await ${id}(req);
       
