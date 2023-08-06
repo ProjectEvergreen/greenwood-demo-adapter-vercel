@@ -14,6 +14,8 @@ function generateOutputFormat(id, type) {
 
     export default async function handler (request, response) {
       const { url, headers } = request;
+      console.log({ request });
+      console.log({ response });
       const req = new Request(new URL(url, \`http://\${headers.host}\`), {
         headers: new Headers(headers)
       });
