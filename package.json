@@ -1,7 +1,7 @@
 {
   "name": "greenwood-demo-adapter-vercel",
   "version": "1.0.0",
-  "description": "A demonstration repo for using Greenwood with Vercel Serverless and Edge functions",
+  "description": "A demonstration repo for deploying a full-stack Greenwood app with Vercel static hosting and Serverless + Edge functions",
   "homepage": "https://github.com/ProjectEvergreen/greenwood-demo-adapter-vercel#readme",
   "author": "Owen Buckley <owen@thegreenhouse.io>",
   "license": "ISC",
