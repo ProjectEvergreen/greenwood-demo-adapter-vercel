@@ -20,12 +20,10 @@
   "scripts": {
     "develop": "greenwood develop",
     "build": "greenwood build",
-    "serve": "greenwood serve",
-    "serve:vercel": "vercel dev"
+    "serve": "greenwood serve"
   },
   "devDependencies": {
-    "@greenwood/cli": "~0.29.0-alpha.0",
-    "patch-package": "^7.0.0",
-    "vercel": "^29.3.0"
+    "@greenwood/cli": "~0.29.0-alpha.2",
+    "@greenwood/plugin-adapter-vercel": "~0.29.0-alpha.2"
   }
 }
