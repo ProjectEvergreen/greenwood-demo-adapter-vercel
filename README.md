@@ -1,6 +1,6 @@
 # greenwood-demo-adapter-vercel
 
-A demonstration repo for deploying a full-stack Greenwood app with Vercel static hosting and Serverless + Edge functions.
+A demonstration repo for deploying a full-stack [**Greenwood**](https://www.greenwoodjs.io/) app with Vercel static hosting and Serverless + Edge functions.
 
 ## Setup
 
