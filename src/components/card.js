@@ -32,7 +32,7 @@ export default class Card extends HTMLElement {
             border: 0;
             font-size: 1rem;
             border-radius: 5px;
-            cursor: button;
+            cursor: pointer;
           }
           img {
             max-width: 500px;
