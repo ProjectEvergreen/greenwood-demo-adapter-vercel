@@ -10,8 +10,7 @@ To run locally
 
 You can now run these npm scripts
 - `npm run dev` - Start the demo with Greenwood local dev server
-- `npm run serve` - Start the demo with a production Greenwood build
-- `npm run serve:vercel` - Generate a production build and start a local Vercel server with the [Vercel CLI](https://vercel.com/docs/cli) for local testing. (Greenwood live reload not supported)
+- `npm start` - Start the demo with a production Greenwood build
 
 > 👉 **Note**: _If deploying to your own Vercel instance, make sure you set the NodeJS version to `18.x` in your Vercel project's General settings_.
 
