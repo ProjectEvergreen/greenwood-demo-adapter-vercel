@@ -38,7 +38,7 @@ The serverless demos include the following examples:
 
 ### SSR Pages
 
-- ✅ [`/artists`](https://greenwood-demo-adapter-vercel.vercel.app/artists) - SSR page for rendering Greenwood pages.
+- ✅ [`/products/`](https://greenwood-demo-adapter-vercel.vercel.app/products/) - SSR page for rendering Greenwood pages.
 
 ## Edge
 
