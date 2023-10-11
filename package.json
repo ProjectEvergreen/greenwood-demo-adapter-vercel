@@ -23,7 +23,7 @@
   "scripts": {
     "clean": "rimraf public .greenwood .vercel",
     "dev": "greenwood develop",
-    "build": "greenwood build",
+    "build": "mkdir -p public/api/assets && greenwood build",
     "serve": "greenwood build && greenwood serve",
     "start": "npm run serve"
   },
