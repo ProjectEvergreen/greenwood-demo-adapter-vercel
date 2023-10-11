@@ -1,5 +1,7 @@
 <html>
   <head>
+    <script type="module" src="../components/greeting.js"></script>
+
     <!-- Greeting API Setup -->
     <script>
       globalThis.addEventListener('DOMContentLoaded', () => {
@@ -22,17 +24,22 @@
         let offset = 0 - page;
 
         globalThis.document.getElementById('load-products').addEventListener('click', async () => {
-          offset = offset += page;
-          const html = await fetch(`/api/fragment?offset=${offset}&limit=10`).then(resp => resp.text());
-          console.log({ html });
+          const data = await fetch(`/api/greeting?name=owen`).then(resp => resp.text());
+          console.log({ data });
+          // offset = offset += page;
+          // const html = await fetch(`/api/fragment?offset=${offset}&limit=10`).then(resp => resp.text());
+          // console.log({ html });
 
-          document.getElementById('load-products-output').insertAdjacentHTML('beforeend', html);
+          // document.getElementById('load-products-output').insertAdjacentHTML('beforeend', html);
         });
       });
     </script>
   </head>
 
   <body>
+
+    <app-greeting></app-greeting>
+    <app-greeting name="Greenwood"></app-greeting>
     <article>
       <h2>JSON API</h2>
       <p>This is an example of a Greenwood API Route returning JSON when fetched on-submit of the form to display a message on the page.  You can see it fire in the network tab as <i>/api/greeting</i></p>
