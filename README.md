@@ -16,7 +16,7 @@ You can now run these npm scripts
 
 ## Demo
 
-This repo aims to demonstrate a couple of Greenwood's features ([API Routes](https://www.greenwoodjs.io/docs/api-routes/) and [SSR pages](https://www.greenwoodjs.io/docs/server-rendering/#routes)) leveraging Netlify's serverless and edge function capabilities, focused on using Web Components (WCC) and Web Standards to deliver the content for the demo.
+This repo aims to demonstrate a couple of Greenwood's features ([API Routes](https://www.greenwoodjs.io/docs/api-routes/) and [SSR pages](https://www.greenwoodjs.io/docs/server-rendering/#routes)) leveraging Vercel's serverless and edge function capabilities, focused on using Web Components (WCC) and Web Standards to deliver the content for the demo.
 
 ## Status
 
@@ -59,6 +59,6 @@ TODO
 1. [x] How to best manage local dev (runtime "compliance") - just for production builds
     - proxy vercel cli dev option?
     - should use _src/_ or _public/_?  depends on dev vs production mode?  Interestingly, the manual way only worked deployed when using _public/_
-1. [x] Make sure to spread all headers / response properties in netlify functions adapter output
+1. [x] Make sure to spread all headers / response properties in Vercel functions adapter output
 1. [ ] Keep it as an experimental feature for 1.0 (or per platform?)
 1. [ ] Will SSR pages need access to the request object?
