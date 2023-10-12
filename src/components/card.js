@@ -62,8 +62,6 @@ export class Card extends LitElement {
 
   render() {
     const { title, thumbnail } = this;
-    console.log({ title, thumbnail });
-
     if(!title && !thumbnail) {
       return;
     }
