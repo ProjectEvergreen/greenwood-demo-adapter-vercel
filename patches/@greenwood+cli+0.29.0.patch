@@ -1,0 +1,116 @@
+diff --git a/node_modules/@greenwood/cli/src/config/rollup.config.js b/node_modules/@greenwood/cli/src/config/rollup.config.js
+index 8aa6f56..fa3a2c5 100644
+--- a/node_modules/@greenwood/cli/src/config/rollup.config.js
++++ b/node_modules/@greenwood/cli/src/config/rollup.config.js
+@@ -355,40 +355,36 @@ const getRollupConfigForScriptResources = async (compilation) => {
+ 
+ const getRollupConfigForApis = async (compilation) => {
+   const { outputDir, userWorkspace } = compilation.context;
+-  const input = [...compilation.manifest.apis.values()]
+-    .map(api => normalizePathnameForWindows(new URL(`.${api.path}`, userWorkspace)));
+ 
+   // why is this needed?
+   await fs.promises.mkdir(new URL('./api/assets/', outputDir), {
+     recursive: true
+   });
+ 
+-  // TODO should routes and APIs have chunks?
+-  // https://github.com/ProjectEvergreen/greenwood/issues/1118
+-  return [{
+-    input,
+-    output: {
+-      dir: `${normalizePathnameForWindows(outputDir)}/api`,
+-      entryFileNames: '[name].js',
+-      chunkFileNames: '[name].[hash].js'
+-    },
+-    plugins: [
+-      greenwoodJsonLoader(),
+-      greenwoodResourceLoader(compilation),
+-      nodeResolve(),
+-      commonjs(),
+-      greenwoodImportMetaUrl(compilation)
+-    ]
+-  }];
++  return [...compilation.manifest.apis.values()]
++    .map(api => normalizePathnameForWindows(new URL(`.${api.path}`, userWorkspace)))
++    .map(filepath => ({
++      input: filepath,
++      output: {
++        dir: `${normalizePathnameForWindows(outputDir)}/api`,
++        entryFileNames: '[name].js',
++        chunkFileNames: '[name].[hash].js'
++      },
++      plugins: [
++        greenwoodJsonLoader(),
++        greenwoodResourceLoader(compilation),
++        nodeResolve(),
++        commonjs(),
++        greenwoodImportMetaUrl(compilation)
++      ]
++    }));
+ };
+ 
+ const getRollupConfigForSsr = async (compilation, input) => {
+   const { outputDir } = compilation.context;
+ 
+-  // TODO should routes and APIs have chunks?
+-  // https://github.com/ProjectEvergreen/greenwood/issues/1118
+-  return [{
+-    input,
++  return input.map(filepath => ({
++    input: filepath,
+     output: {
+       dir: normalizePathnameForWindows(outputDir),
+       entryFileNames: '_[name].js',
+@@ -425,7 +421,7 @@ const getRollupConfigForSsr = async (compilation, input) => {
+ 
+       }
+     }
+-  }];
++  }));
+ };
+ 
+ export {
+diff --git a/node_modules/@greenwood/cli/src/lifecycles/bundle.js b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
+index e5a28fd..4b7a6b9 100644
+--- a/node_modules/@greenwood/cli/src/lifecycles/bundle.js
++++ b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
+@@ -163,11 +163,15 @@ async function bundleStyleResources(compilation, resourcePlugins) {
+ 
+ async function bundleApiRoutes(compilation) {
+   // https://rollupjs.org/guide/en/#differences-to-the-javascript-api
+-  const [rollupConfig] = await getRollupConfigForApis(compilation);
++  const apiConfigs = await getRollupConfigForApis(compilation);
+ 
+-  if (rollupConfig.input.length !== 0) {
+-    const bundle = await rollup(rollupConfig);
+-    await bundle.write(rollupConfig.output);
++  if (apiConfigs.length > 0 && apiConfigs[0].input.length !== 0) {
++    for (const configIndex in apiConfigs) {
++      const rollupConfig = apiConfigs[configIndex];
++      const bundle = await rollup(rollupConfig);
++      await bundle.write(rollupConfig.output);
++
++    }
+   }
+ }
+ 
+@@ -233,11 +237,14 @@ async function bundleSsrPages(compilation) {
+       }
+     }
+ 
+-    const [rollupConfig] = await getRollupConfigForSsr(compilation, input);
++    const ssrConfigs = await getRollupConfigForSsr(compilation, input);
+ 
+-    if (rollupConfig.input.length > 0) {
+-      const bundle = await rollup(rollupConfig);
+-      await bundle.write(rollupConfig.output);
++    if (ssrConfigs.length > 0 && ssrConfigs[0].input !== '') {
++      for (const configIndex in ssrConfigs) {
++        const rollupConfig = ssrConfigs[configIndex];
++        const bundle = await rollup(rollupConfig);
++        await bundle.write(rollupConfig.output);
++      }
+     }
+   }
+ }

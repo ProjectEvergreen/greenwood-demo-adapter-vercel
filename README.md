@@ -51,14 +51,3 @@ TODO
 ### SSR page
 
 TODO
-
-## Adapter Implementation Thoughts / Questions
-
-1. [x] Will need to generate the _api/_ folder on-demand / as part of the build instead of hardcoding, likely from _manifest.json_
-1. [x] How to manage vercel configuration (e.g. redirects for pages)?  Auto generate, auto merge into _vercel.json_?
-1. [x] How to best manage local dev (runtime "compliance") - just for production builds
-    - proxy vercel cli dev option?
-    - should use _src/_ or _public/_?  depends on dev vs production mode?  Interestingly, the manual way only worked deployed when using _public/_
-1. [x] Make sure to spread all headers / response properties in Vercel functions adapter output
-1. [ ] Keep it as an experimental feature for 1.0 (or per platform?)
-1. [ ] Will SSR pages need access to the request object?
