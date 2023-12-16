@@ -1,0 +1,70 @@
+diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
+index 77602ae..cb59799 100644
+--- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
++++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
+@@ -103,32 +103,6 @@ async function vercelAdapter(compilation) {
+       new URL(`./__${id}.js`, outputRoot),
+       { recursive: true }
+     );
+-
+-    // TODO quick hack to make serverless pages are fully self-contained
+-    // for example, execute-route-module.js will only get code split if there are more than one SSR pages
+-    // https://github.com/ProjectEvergreen/greenwood/issues/1118
+-    if (isExecuteRouteModule) {
+-      await fs.cp(
+-        new URL(`./${isExecuteRouteModule}`, outputDir),
+-        new URL(`./${isExecuteRouteModule}`, outputRoot)
+-      );
+-    }
+-
+-    // TODO how to track SSR resources that get dumped out in the public directory?
+-    // https://github.com/ProjectEvergreen/greenwood/issues/1118
+-    const ssrPageAssets = (await fs.readdir(outputDir))
+-      .filter(file => !path.basename(file).startsWith('_')
+-        && !path.basename(file).startsWith('execute')
+-        && path.basename(file).endsWith('.js')
+-      );
+-
+-    for (const asset of ssrPageAssets) {
+-      await fs.cp(
+-        new URL(`./${asset}`, outputDir),
+-        new URL(`./${asset}`, outputRoot),
+-        { recursive: true }
+-      );
+-    }
+   }
+ 
+   for (const [key] of apiRoutes) {
+@@ -138,32 +112,11 @@ async function vercelAdapter(compilation) {
+ 
+     await setupFunctionBuildFolder(id, outputType, outputRoot);
+ 
+-    // TODO ideally all functions would be self contained
+-    // https://github.com/ProjectEvergreen/greenwood/issues/1118
+     await fs.cp(
+       new URL(`./api/${id}.js`, outputDir),
+       new URL(`./${id}.js`, outputRoot),
+       { recursive: true }
+     );
+-
+-    if (await checkResourceExists(new URL('./api/assets/', outputDir))) {
+-      await fs.cp(
+-        new URL('./api/assets/', outputDir),
+-        new URL('./assets/', outputRoot),
+-        { recursive: true }
+-      );
+-    }
+-
+-    const ssrApiAssets = (await fs.readdir(new URL('./api/', outputDir)))
+-      .filter(file => new RegExp(/^[\w][\w-]*\.[a-zA-Z0-9]{4,20}\.[\w]{2,4}$/).test(path.basename(file)));
+-
+-    for (const asset of ssrApiAssets) {
+-      await fs.cp(
+-        new URL(`./${asset}`, new URL('./api/', outputDir)),
+-        new URL(`./${asset}`, outputRoot),
+-        { recursive: true }
+-      );
+-    }
+   }
+ 
+   // static assets / build
