@@ -26,6 +26,12 @@ template.innerHTML = `
       border-radius: 5px;
       cursor: pointer;
     }
+
+    @media(max-width: 768px) {
+      dialog {
+        width: 80%;
+      }
+    }
   </style>
   <dialog>
     <h3 id="content"></h3>
