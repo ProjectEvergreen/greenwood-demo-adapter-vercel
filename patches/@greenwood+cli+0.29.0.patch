@@ -1,8 +1,55 @@
 diff --git a/node_modules/@greenwood/cli/src/config/rollup.config.js b/node_modules/@greenwood/cli/src/config/rollup.config.js
-index 8aa6f56..fa3a2c5 100644
+index 8aa6f56..b560b9b 100644
 --- a/node_modules/@greenwood/cli/src/config/rollup.config.js
 +++ b/node_modules/@greenwood/cli/src/config/rollup.config.js
-@@ -355,40 +355,36 @@ const getRollupConfigForScriptResources = async (compilation) => {
+@@ -274,26 +274,26 @@ function greenwoodImportMetaUrl(compilation) {
+ // TODO could we use this instead?
+ // https://github.com/rollup/rollup/blob/v2.79.1/docs/05-plugin-development.md#resolveimportmeta
+ // https://github.com/ProjectEvergreen/greenwood/issues/1087
+-function greenwoodPatchSsrPagesEntryPointRuntimeImport() {
+-  return {
+-    name: 'greenwood-patch-ssr-pages-entry-point-runtime-import',
+-    generateBundle(options, bundle) {
+-      Object.keys(bundle).forEach((key) => {
+-        if (key.startsWith('__')) {
+-          // ___GWD_ENTRY_FILE_URL=${filename}___
+-          const needle = bundle[key].code.match(/___GWD_ENTRY_FILE_URL=(.*.)___/);
+-          if (needle) {
+-            const entryPathMatch = needle[1];
+-
+-            bundle[key].code = bundle[key].code.replace(/'___GWD_ENTRY_FILE_URL=(.*.)___'/, `new URL('./_${entryPathMatch}', import.meta.url)`);
+-          } else {
+-            console.warn(`Could not find entry path match for bundle => ${key}`);
+-          }
+-        }
+-      });
+-    }
+-  };
+-}
++// function greenwoodPatchSsrPagesEntryPointRuntimeImport() {
++//   return {
++//     name: 'greenwood-patch-ssr-pages-entry-point-runtime-import',
++//     generateBundle(options, bundle) {
++//       Object.keys(bundle).forEach((key) => {
++//         if (key.startsWith('__')) {
++//           // ___GWD_ENTRY_FILE_URL=${filename}___
++//           const needle = bundle[key].code.match(/___GWD_ENTRY_FILE_URL=(.*.)___/);
++//           if (needle) {
++//             const entryPathMatch = needle[1];
++
++//             bundle[key].code = bundle[key].code.replace(/'___GWD_ENTRY_FILE_URL=(.*.)___'/, `new URL('./_${entryPathMatch}', import.meta.url)`);
++//           } else {
++//             console.warn(`Could not find entry path match for bundle => ${key}`);
++//           }
++//         }
++//       });
++//     }
++//   };
++// }
+ 
+ const getRollupConfigForScriptResources = async (compilation) => {
+   const { outputDir } = compilation.context;
+@@ -355,44 +355,40 @@ const getRollupConfigForScriptResources = async (compilation) => {
  
  const getRollupConfigForApis = async (compilation) => {
    const { outputDir, userWorkspace } = compilation.context;
@@ -61,7 +108,22 @@ index 8aa6f56..fa3a2c5 100644
 +    input: filepath,
      output: {
        dir: normalizePathnameForWindows(outputDir),
-       entryFileNames: '_[name].js',
+-      entryFileNames: '_[name].js',
+-      chunkFileNames: '[name].[hash].js'
++      entryFileNames: '[name].entry.js',
++      chunkFileNames: '[name].chunk.[hash].js'
+     },
+     plugins: [
+       greenwoodJsonLoader(),
+@@ -405,7 +401,7 @@ const getRollupConfigForSsr = async (compilation, input) => {
+       }),
+       commonjs(),
+       greenwoodImportMetaUrl(compilation),
+-      greenwoodPatchSsrPagesEntryPointRuntimeImport() // TODO a little hacky but works for now
++      // greenwoodPatchSsrPagesEntryPointRuntimeImport() // TODO a little hacky but works for now
+     ],
+     onwarn: (errorObj) => {
+       const { code, message } = errorObj;
 @@ -425,7 +421,7 @@ const getRollupConfigForSsr = async (compilation, input) => {
  
        }
@@ -72,7 +134,7 @@ index 8aa6f56..fa3a2c5 100644
  
  export {
 diff --git a/node_modules/@greenwood/cli/src/lifecycles/bundle.js b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
-index e5a28fd..4b7a6b9 100644
+index e5a28fd..68e9104 100644
 --- a/node_modules/@greenwood/cli/src/lifecycles/bundle.js
 +++ b/node_modules/@greenwood/cli/src/lifecycles/bundle.js
 @@ -163,11 +163,15 @@ async function bundleStyleResources(compilation, resourcePlugins) {
@@ -95,7 +157,52 @@ index e5a28fd..4b7a6b9 100644
    }
  }
  
-@@ -233,11 +237,14 @@ async function bundleSsrPages(compilation) {
+@@ -191,7 +195,7 @@ async function bundleSsrPages(compilation) {
+     for (const page of compilation.graph) {
+       if (page.isSSR && !page.prerender) {
+         const { filename, imports, route, template, title } = page;
+-        const entryFileUrl = new URL(`./_${filename}`, scratchDir);
++        const entryFileUrl = new URL(`./${filename}`, scratchDir);
+         const moduleUrl = new URL(`./${filename}`, pagesDir);
+         const request = new Request(moduleUrl); // TODO not really sure how to best no-op this?
+         // TODO getTemplate has to be static (for now?)
+@@ -199,6 +203,8 @@ async function bundleSsrPages(compilation) {
+         const data = await executeRouteModule({ moduleUrl, compilation, page, prerender: false, htmlContents: null, scripts: [], request });
+         let staticHtml = '';
+ 
++        console.log({ filename });
++        console.log(compilation.context.pagesDir)
+         staticHtml = data.template ? data.template : await getPageTemplate(staticHtml, compilation.context, template, []);
+         staticHtml = await getAppTemplate(staticHtml, compilation.context, imports, [], false, title);
+         staticHtml = await getUserScripts(staticHtml, compilation);
+@@ -206,13 +212,18 @@ async function bundleSsrPages(compilation) {
+         staticHtml = staticHtml.replace(/[`\\$]/g, '\\$&'); // https://stackoverflow.com/a/75688937/417806
+ 
+         // better way to write out this inline code?
++        // TODO using a URL here forces a chunk unfortunately..., but at leasts its bundled
++        // seems less hacky than the previous way though...?
++        // TODO we can't hardcode the src/pages/path
+         await fs.writeFile(entryFileUrl, `
+           import { executeRouteModule } from '${normalizePathnameForWindows(executeModuleUrl)}';
+           
++          const moduleUrl = new URL('../src/pages/${filename}', import.meta.url);
++
+           export async function handler(request) {
+             const compilation = JSON.parse('${JSON.stringify(compilation)}');
+             const page = JSON.parse('${JSON.stringify(page)}');
+-            const moduleUrl = '___GWD_ENTRY_FILE_URL=${filename}___';
++            // const moduleUrl = '___GWD_ENTRY_FILE_URL=${filename}___';
+             const data = await executeRouteModule({ moduleUrl, compilation, page, request });
+             let staticHtml = \`${staticHtml}\`;
+ 
+@@ -228,16 +239,20 @@ async function bundleSsrPages(compilation) {
+           }
+         `);
+ 
+-        input.push(normalizePathnameForWindows(moduleUrl));
++        // console.log({ moduleUrl, entryFileUrl });
++        // input.push(normalizePathnameForWindows(moduleUrl));
+         input.push(normalizePathnameForWindows(entryFileUrl));
        }
      }
  
@@ -114,3 +221,18 @@ index e5a28fd..4b7a6b9 100644
      }
    }
  }
+diff --git a/node_modules/@greenwood/cli/src/lifecycles/serve.js b/node_modules/@greenwood/cli/src/lifecycles/serve.js
+index 6787503..16c4737 100644
+--- a/node_modules/@greenwood/cli/src/lifecycles/serve.js
++++ b/node_modules/@greenwood/cli/src/lifecycles/serve.js
+@@ -293,8 +293,9 @@ async function getHybridServer(compilation) {
+       const isApiRoute = manifest.apis.has(url.pathname);
+       const request = transformKoaRequestIntoStandardRequest(url, ctx.request);
+ 
++      console.log({ matchingRoute });
+       if (!config.prerender && matchingRoute.isSSR && !matchingRoute.prerender) {
+-        const { handler } = await import(new URL(`./__${matchingRoute.filename}`, outputDir));
++        const { handler } = await import(new URL(`./${matchingRoute.id}.entry.js`, outputDir));
+         const response = await handler(request, compilation);
+ 
+         ctx.body = Readable.from(response.body);
