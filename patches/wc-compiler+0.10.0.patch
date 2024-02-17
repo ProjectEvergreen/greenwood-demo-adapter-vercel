@@ -1,0 +1,36 @@
+diff --git a/node_modules/wc-compiler/src/dom-shim.js b/node_modules/wc-compiler/src/dom-shim.js
+index 389b996..218abc3 100644
+--- a/node_modules/wc-compiler/src/dom-shim.js
++++ b/node_modules/wc-compiler/src/dom-shim.js
+@@ -123,6 +123,7 @@ class HTMLTemplateElement extends HTMLElement {
+ // https://developer.mozilla.org/en-US/docs/Web/API/CustomElementRegistry
+ class CustomElementsRegistry {
+   constructor() {
++    // TODO this should probably be a set
+     this.customElementsRegistry = {};
+   }
+ 
+@@ -133,6 +134,10 @@ class CustomElementsRegistry {
+   get(tagName) {
+     return this.customElementsRegistry[tagName];
+   }
++
++  has(tagName) {
++    return this.customElementsRegistry[tagName];
++  }
+ }
+ 
+ // mock top level aliases (globalThis === window)
+diff --git a/node_modules/wc-compiler/src/wcc.js b/node_modules/wc-compiler/src/wcc.js
+index 887e0b6..90f19b7 100644
+--- a/node_modules/wc-compiler/src/wcc.js
++++ b/node_modules/wc-compiler/src/wcc.js
+@@ -134,7 +134,7 @@ async function initializeCustomElement(elementURL, tagName, attrs = [], definiti
+ 
+   // https://github.com/ProjectEvergreen/wcc/pull/67/files#r902061804
+   const { pathname } = elementURL;
+-  const element = tagName
++  const element = customElements.has(tagName)
+     ? customElements.get(tagName)
+     : (await import(pathname)).default;
+   const dataLoader = (await import(pathname)).getData;
