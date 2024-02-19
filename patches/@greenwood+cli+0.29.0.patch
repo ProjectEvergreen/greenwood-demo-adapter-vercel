@@ -1,5 +1,5 @@
 diff --git a/node_modules/@greenwood/cli/src/config/rollup.config.js b/node_modules/@greenwood/cli/src/config/rollup.config.js
-index 8aa6f56..d529311 100644
+index 8aa6f56..0292296 100644
 --- a/node_modules/@greenwood/cli/src/config/rollup.config.js
 +++ b/node_modules/@greenwood/cli/src/config/rollup.config.js
 @@ -1,3 +1,4 @@
@@ -106,17 +106,17 @@ index 8aa6f56..d529311 100644
      }
    };
  }
-@@ -355,44 +377,40 @@ const getRollupConfigForScriptResources = async (compilation) => {
+@@ -355,44 +377,35 @@ const getRollupConfigForScriptResources = async (compilation) => {
  
  const getRollupConfigForApis = async (compilation) => {
    const { outputDir, userWorkspace } = compilation.context;
 -  const input = [...compilation.manifest.apis.values()]
 -    .map(api => normalizePathnameForWindows(new URL(`.${api.path}`, userWorkspace)));
- 
-   // why is this needed?
-   await fs.promises.mkdir(new URL('./api/assets/', outputDir), {
-     recursive: true
-   });
+-
+-  // why is this needed?
+-  await fs.promises.mkdir(new URL('./api/assets/', outputDir), {
+-    recursive: true
+-  });
  
 -  // TODO should routes and APIs have chunks?
 -  // https://github.com/ProjectEvergreen/greenwood/issues/1118
@@ -172,7 +172,7 @@ index 8aa6f56..d529311 100644
      },
      plugins: [
        greenwoodJsonLoader(),
-@@ -404,8 +422,7 @@ const getRollupConfigForSsr = async (compilation, input) => {
+@@ -404,8 +417,7 @@ const getRollupConfigForSsr = async (compilation, input) => {
          preferBuiltins: true
        }),
        commonjs(),
@@ -182,7 +182,7 @@ index 8aa6f56..d529311 100644
      ],
      onwarn: (errorObj) => {
        const { code, message } = errorObj;
-@@ -425,7 +442,7 @@ const getRollupConfigForSsr = async (compilation, input) => {
+@@ -425,7 +437,7 @@ const getRollupConfigForSsr = async (compilation, input) => {
  
        }
      }
