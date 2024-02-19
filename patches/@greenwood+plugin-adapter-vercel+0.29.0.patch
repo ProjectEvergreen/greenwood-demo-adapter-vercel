@@ -1,5 +1,5 @@
 diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-index 77602ae..2117aee 100644
+index 77602ae..0701369 100644
 --- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 +++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 @@ -6,7 +6,7 @@ import { checkResourceExists } from '@greenwood/cli/src/lib/resource-utils.js';
@@ -7,11 +7,11 @@ index 77602ae..2117aee 100644
    const handlerAlias = '$handler';
    const path = type === 'page'
 -    ? `__${id}`
-+    ? `${id}.entry`
++    ? `${id}.route`
      : id;
  
    return `
-@@ -82,50 +82,28 @@ async function vercelAdapter(compilation) {
+@@ -82,85 +82,50 @@ async function vercelAdapter(compilation) {
      'version': 3
    }));
  
@@ -23,9 +23,8 @@ index 77602ae..2117aee 100644
      const { id } = page;
      const outputRoot = new URL(`./${basePath}/${id}.func/`, adapterOutputUrl);
 +    const files = (await fs.readdir(outputDir))
-+      .filter(file => file.startsWith(`${id}.chunk.`) && file.endsWith('.js'));
-+    console.log({ files });
-     
++      .filter(file => file.startsWith(`${id}.route.chunk.`) && file.endsWith('.js'));
+ 
      await setupFunctionBuildFolder(id, outputType, outputRoot);
  
 +    // handle user's actual route entry file
@@ -38,8 +37,8 @@ index 77602ae..2117aee 100644
 -    await fs.cp(
 -      new URL(`./__${id}.js`, outputDir),
 -      new URL(`./__${id}.js`, outputRoot),
-+      new URL(`./${id}.entry.js`, outputDir),
-+      new URL(`./${id}.entry.js`, outputRoot),
++      new URL(`./${id}.route.js`, outputDir),
++      new URL(`./${id}.route.js`, outputRoot),
        { recursive: true }
      );
  
@@ -48,7 +47,7 @@ index 77602ae..2117aee 100644
 -    // https://github.com/ProjectEvergreen/greenwood/issues/1118
 -    if (isExecuteRouteModule) {
 +    // and the URL chunk for renderer plugin and executeRouteModule
-+    for(const file of files) {
++    for (const file of files) {
        await fs.cp(
 -        new URL(`./${isExecuteRouteModule}`, outputDir),
 -        new URL(`./${isExecuteRouteModule}`, outputRoot)
@@ -72,7 +71,14 @@ index 77602ae..2117aee 100644
          { recursive: true }
        );
      }
-@@ -138,22 +116,14 @@ async function vercelAdapter(compilation) {
+   }
+ 
+-  for (const [key] of apiRoutes) {
++  for (const [key, value] of apiRoutes.entries()) {
+     const outputType = 'api';
+     const id = key.replace(`${basePath}/api/`, '');
+     const outputRoot = new URL(`./${basePath}/api/${id}.func/`, adapterOutputUrl);
++    const { assets = [] } = value;
  
      await setupFunctionBuildFolder(id, outputType, outputRoot);
  
@@ -92,8 +98,16 @@ index 77602ae..2117aee 100644
 -      );
 -    }
 -
-+    // need this for URL referenced chunks
-+    // ideally we would map bundles to pages to avoid copying the same files into every function
-     const ssrApiAssets = (await fs.readdir(new URL('./api/', outputDir)))
-       .filter(file => new RegExp(/^[\w][\w-]*\.[a-zA-Z0-9]{4,20}\.[\w]{2,4}$/).test(path.basename(file)));
- 
+-    const ssrApiAssets = (await fs.readdir(new URL('./api/', outputDir)))
+-      .filter(file => new RegExp(/^[\w][\w-]*\.[a-zA-Z0-9]{4,20}\.[\w]{2,4}$/).test(path.basename(file)));
+-
+-    for (const asset of ssrApiAssets) {
++    for (const asset of assets) {
+       await fs.cp(
+-        new URL(`./${asset}`, new URL('./api/', outputDir)),
+-        new URL(`./${asset}`, outputRoot),
++        new URL(asset),
++        new URL(`./${asset.split(path.sep).pop()}`, outputRoot),
+         { recursive: true }
+       );
+     }
