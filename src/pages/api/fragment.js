@@ -1,5 +1,5 @@
 import { renderFromHTML } from 'wc-compiler';
-import { getProducts } from '../services/products.js';
+import { getProducts } from '../../services/products.js';
 
 export async function handler(request) {
   const params = new URLSearchParams(request.url.slice(request.url.indexOf('?')));
@@ -20,7 +20,7 @@ export async function handler(request) {
       }).join('')
     }
   `, [
-    new URL('../components/card.js', import.meta.url)
+    new URL('../../components/card.js', import.meta.url)
   ]);
 
   return new Response(html, {
