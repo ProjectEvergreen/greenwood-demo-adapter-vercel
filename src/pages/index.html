@@ -26,7 +26,7 @@
           offset = offset += page;
 
           const html = await fetch(`/api/fragment?offset=${offset}&limit=10`).then(resp => resp.text());
-          const fragment = new DOMParser().parseFromString(html, 'text/html', {
+          const fragment = Document.parseHTMLUnsafe(html, 'text/html', {
             includeShadowRoots: true
           });
 
