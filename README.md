@@ -22,8 +22,8 @@ This repo aims to demonstrate a couple of Greenwood's features ([API Routes](htt
 
 |Feature    |Greenwood |Serverless|Edge|
 |---------- |----------|----------|----|
-|API Routes |   ✅     |  ✅       | ❓ |
-|SSR Pages  |   ✅     |  ✅       | ❓ |
+|API Routes |   ✅     |  ✅      | ❓ |
+|SSR Pages  |   ✅     |  ✅      | ❓ |
 
 You can see the live demo at [https://greenwood-demo-adapter-vercel.vercel.app/](https://greenwood-demo-adapter-vercel.vercel.app/).
 
@@ -35,6 +35,8 @@ The serverless demos include the following examples:
 
 - ✅  [`/api/greeting?name{xxx}`](https://greenwood-demo-adapter-vercel.vercel.app/api/greeting) - An API that returns a JSON response and optionally uses the `name` query param for customization.  Otherwise returns a default message.
 - ✅ [`/api/fragment`](https://greenwood-demo-adapter-vercel.vercel.app/api/fragment) - An API for returning fragments of server rendered Web Components as HTML, that are then appended to the DOM.  The same card component used in SSR also runs on the client to provide interactivity, like event handling.
+- ✅ [`/api/search`](https://greenwood-demo-adapter-vercel.vercel.app/api/event) - An API for handling a search using  `request.formData()`
+- ✅ [`/api/event`](https://greenwood-demo-adapter-vercel.vercel.app/api/event) - An API for mimicking a webhook `POST` request that uses `request.json()`
 
 ### SSR Pages
 
