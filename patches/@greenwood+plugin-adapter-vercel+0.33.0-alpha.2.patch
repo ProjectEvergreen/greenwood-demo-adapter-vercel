@@ -1,0 +1,29 @@
+diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
+index 89b32f3..6de9812 100644
+--- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
++++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
+@@ -95,8 +95,10 @@ async function vercelAdapter(compilation, options) {
+ 
+   for (const page of ssrPages) {
+     const outputType = "page";
+-    const { id, outputHref } = page;
+-    const outputRoot = new URL(`./${basePath}/${id}.func/`, adapterOutputUrl);
++    console.log({ page });
++    const { id, outputHref, route } = page;
++    // chop off the last / in route
++    const outputRoot = new URL(`./${basePath}/${route.slice(0, -1)}.func/`, adapterOutputUrl);
+     const chunks = (await fs.readdir(outputDir)).filter(
+       (file) => file.startsWith(`${id}.route.chunk`) && file.endsWith(".js"),
+     );
+@@ -120,8 +122,9 @@ async function vercelAdapter(compilation, options) {
+ 
+   for (const [key, value] of apiRoutes.entries()) {
+     const outputType = "api";
+-    const { id, outputHref } = apiRoutes.get(key);
+-    const outputRoot = new URL(`.${basePath}/api/${id}.func/`, adapterOutputUrl);
++    const { id, outputHref, route } = apiRoutes.get(key);
++    console.log('entry', apiRoutes.get(key));
++    const outputRoot = new URL(`.${basePath}/${route}.func/`, adapterOutputUrl);
+     const { assets = [] } = value;
+ 
+     await setupFunctionBuildFolder(id, outputType, outputRoot, runtime);
