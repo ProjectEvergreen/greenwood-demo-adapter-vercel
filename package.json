@@ -20,15 +20,16 @@
     "SSR"
   ],
   "scripts": {
-    "clean": "rimraf public .greenwood .vercel",
     "dev": "greenwood develop",
     "build": "greenwood build",
     "serve": "greenwood build && greenwood serve",
     "start": "npm run serve"
   },
   "devDependencies": {
-    "@greenwood/cli": "~0.32.0",
-    "@greenwood/plugin-adapter-vercel": "~0.32.0",
-    "rimraf": "^6.0.1"
+    "@greenwood/cli": "~0.33.0",
+    "@greenwood/plugin-adapter-vercel": "~0.33.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.50.0"
   }
 }
