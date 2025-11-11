@@ -6,6 +6,7 @@ export default class BlogPostPage extends HTMLElement {
 
   constructor({ props }) {
     super();
+    console.log({ props });
     this.#id = props?.id;
   }
 
