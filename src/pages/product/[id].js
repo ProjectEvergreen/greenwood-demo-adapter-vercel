@@ -4,9 +4,9 @@ import { getProducts } from '../../services/products.js';
 export default class BlogPostPage extends HTMLElement {
   #id;
 
-  constructor({ props }) {
+  constructor({ request, props }) {
     super();
-    console.log({ props });
+    console.log({ request, props });
     this.#id = props?.id;
   }
 
