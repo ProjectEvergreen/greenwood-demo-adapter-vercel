@@ -1,5 +1,5 @@
 diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-index 407ebc9..55f3a47 100644
+index 407ebc9..0b7c3cc 100644
 --- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 +++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 @@ -13,7 +13,9 @@ function generateOutputFormat(id, type) {
@@ -64,7 +64,7 @@ index 407ebc9..55f3a47 100644
 +
 +      dynamicRoutes.push({
 +        src: `${basePath}(?<${key}>[^/]+)`,
-+        dest: `${basePath}$1.func`
++        dest: `${basePath}[${key}].func`
 +      })
 +    }
    }
