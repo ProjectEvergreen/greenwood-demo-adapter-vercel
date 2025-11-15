@@ -1,5 +1,5 @@
 diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-index 407ebc9..cef188b 100644
+index 407ebc9..4afb3be 100644
 --- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 +++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 @@ -5,17 +5,23 @@ import { checkResourceExists } from "@greenwood/cli/src/lib/resource-utils.js";
@@ -93,7 +93,7 @@ index 407ebc9..cef188b 100644
 +      console.log({ route });
 +
 +      dynamicRoutes.push({
-+        src: `${basePath}(?<${key}>[^/]+)`,
++        src: `${basePath}(?<${key}>[^/]+)/`,
 +        dest: `${basePath}[${key}]`
 +      })
 +    }
