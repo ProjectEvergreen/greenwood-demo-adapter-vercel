@@ -1,12 +1,12 @@
 import '../../components/card.js';
 import { getProducts } from '../../services/products.js';
 
-export default class BlogPostPage extends HTMLElement {
+export default class ProductDetailsPage extends HTMLElement {
   #id;
 
   constructor({ request, props }) {
     super();
-    console.log({ request, props });
+    console.log('product details page', request, props);
     this.#id = props?.id;
   }
 
