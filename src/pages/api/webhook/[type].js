@@ -1,8 +1,8 @@
 export async function handler(request, { props }) {
   console.log({ props });
-  // if(props?.type !== 'event') {
-  //   return new Response('Not Found', { status: 404 });
-  // }
+  if(props?.type !== 'event') {
+    return new Response('Not Found', { status: 404 });
+  }
 
   const data = await request.json();
   const now = new Date().getTime();

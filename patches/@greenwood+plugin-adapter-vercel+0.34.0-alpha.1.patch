@@ -1,8 +1,19 @@
 diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-index 407ebc9..ad11d3d 100644
+index 407ebc9..9d5f931 100644
 --- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 +++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-@@ -13,7 +13,9 @@ function generateOutputFormat(id, type) {
+@@ -5,16 +5,21 @@ import { checkResourceExists } from "@greenwood/cli/src/lib/resource-utils.js";
+ const DEFAULT_RUNTIME = "nodejs20.x";
+ 
+ // https://vercel.com/docs/functions/serverless-functions/runtimes/node-js#node.js-helpers
+-function generateOutputFormat(id, type) {
++function generateOutputFormat(id, type, key) {
+   const handlerAlias = "$handler";
+   const path = type === "page" ? `${id}.route` : id;
++  const extractProps = key ? `const props = { ${key}: query['${key}'] }` : '{}';
+ 
++  // TODO: we are not handling query params
+   return `
      import { handler as ${handlerAlias} } from './${path}.js';
  
      export default async function handler (request, response) {
@@ -11,18 +22,31 @@ index 407ebc9..ad11d3d 100644
 +      console.log({ request });
 +      console.log({ query });
        const contentType = headers['content-type'] || '';
++      ${extractProps}
        let format = body;
  
-@@ -40,7 +42,7 @@ function generateOutputFormat(id, type) {
+       if (['GET', 'HEAD'].includes(method.toUpperCase())) {
+@@ -40,7 +45,7 @@ function generateOutputFormat(id, type) {
          headers: new Headers(headers),
          method
        });
 -      const res = await ${handlerAlias}(req);
-+      const res = await ${handlerAlias}(req, { props: query });
++      const res = await ${handlerAlias}(req, { props });
  
        res.headers.forEach((value, key) => {
          response.setHeader(key, value);
-@@ -79,18 +81,13 @@ async function vercelAdapter(compilation, options) {
+@@ -51,8 +56,8 @@ function generateOutputFormat(id, type) {
+   `;
+ }
+ 
+-async function setupFunctionBuildFolder(id, outputType, outputRoot, runtime) {
+-  const outputFormat = generateOutputFormat(id, outputType);
++async function setupFunctionBuildFolder(id, outputType, outputRoot, runtime, key) {
++  const outputFormat = generateOutputFormat(id, outputType, key);
+ 
+   await fs.mkdir(outputRoot, { recursive: true });
+   await fs.writeFile(new URL("./index.js", outputRoot), outputFormat);
+@@ -79,18 +84,13 @@ async function vercelAdapter(compilation, options) {
    const adapterOutputUrl = new URL("./.vercel/output/functions/", projectDirectory);
    const ssrPages = compilation.graph.filter((page) => page.isSSR);
    const apiRoutes = compilation.manifest.apis;
@@ -42,7 +66,7 @@ index 407ebc9..ad11d3d 100644
  
    for (const page of ssrPages) {
      const outputType = "page";
-@@ -121,7 +118,8 @@ async function vercelAdapter(compilation, options) {
+@@ -121,11 +121,12 @@ async function vercelAdapter(compilation, options) {
  
    for (const [key, value] of apiRoutes.entries()) {
      const outputType = "api";
@@ -52,7 +76,12 @@ index 407ebc9..ad11d3d 100644
      const outputRoot = new URL(`.${route}.func/`, adapterOutputUrl);
      const { assets = [] } = value;
  
-@@ -134,8 +132,32 @@ async function vercelAdapter(compilation, options) {
+-    await setupFunctionBuildFolder(id, outputType, outputRoot, runtime);
++    await setupFunctionBuildFolder(id, outputType, outputRoot, runtime, segment?.key);
+ 
+     await fs.cp(new URL(outputHref), new URL(`./${id}.js`, outputRoot), { recursive: true });
+ 
+@@ -134,8 +135,28 @@ async function vercelAdapter(compilation, options) {
  
        await fs.cp(new URL(asset), new URL(`./${name}`, outputRoot), { recursive: true });
      }
@@ -63,10 +92,6 @@ index 407ebc9..ad11d3d 100644
 +      console.log({ route });
 +
 +      dynamicRoutes.push({
-+        // working example
-+        // { "src": "/api/webhook/(?<type>[^/]+)", "dest": "/api/webhook/[type]" }
-+        // "src": "/api/webhook/(?<type>[^/]+)",
-+        // "dest": "/api/webhook/[type]"
 +        src: `${basePath}(?<${key}>[^/]+)`,
 +        dest: `${basePath}[${key}]`
 +      })
