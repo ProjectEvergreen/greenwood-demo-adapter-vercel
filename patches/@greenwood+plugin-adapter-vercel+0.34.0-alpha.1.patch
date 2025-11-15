@@ -1,5 +1,5 @@
 diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-index 407ebc9..4afb3be 100644
+index 407ebc9..a6e8cdf 100644
 --- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 +++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 @@ -5,17 +5,23 @@ import { checkResourceExists } from "@greenwood/cli/src/lib/resource-utils.js";
@@ -28,16 +28,18 @@ index 407ebc9..4afb3be 100644
  
        if (['GET', 'HEAD'].includes(method.toUpperCase())) {
          format = null
-@@ -40,7 +46,7 @@ function generateOutputFormat(id, type) {
+@@ -40,7 +46,9 @@ function generateOutputFormat(id, type) {
          headers: new Headers(headers),
          method
        });
 -      const res = await ${handlerAlias}(req);
-+      const res = await ${handlerAlias}(req, { props });
++      const res = type === 'page'
++        ? await ${handlerAlias}({ req, props });
++        : await ${handlerAlias}(req, { props });
  
        res.headers.forEach((value, key) => {
          response.setHeader(key, value);
-@@ -51,8 +57,8 @@ function generateOutputFormat(id, type) {
+@@ -51,8 +59,8 @@ function generateOutputFormat(id, type) {
    `;
  }
  
@@ -48,7 +50,7 @@ index 407ebc9..4afb3be 100644
  
    await fs.mkdir(outputRoot, { recursive: true });
    await fs.writeFile(new URL("./index.js", outputRoot), outputFormat);
-@@ -79,22 +85,17 @@ async function vercelAdapter(compilation, options) {
+@@ -79,22 +87,17 @@ async function vercelAdapter(compilation, options) {
    const adapterOutputUrl = new URL("./.vercel/output/functions/", projectDirectory);
    const ssrPages = compilation.graph.filter((page) => page.isSSR);
    const apiRoutes = compilation.manifest.apis;
@@ -73,7 +75,7 @@ index 407ebc9..4afb3be 100644
      // chop off the last / in route, and just use the id if the index route
      const name = id === "index" ? id : `.${route.slice(0, -1)}`;
      const outputRoot = new URL(`${name}.func/`, adapterOutputUrl);
-@@ -102,7 +103,7 @@ async function vercelAdapter(compilation, options) {
+@@ -102,7 +105,7 @@ async function vercelAdapter(compilation, options) {
        (file) => file.startsWith(`${id}.route.chunk`) && file.endsWith(".js"),
      );
  
@@ -82,7 +84,7 @@ index 407ebc9..4afb3be 100644
  
      // handle user's actual route entry file
      await fs.cp(
-@@ -117,15 +118,27 @@ async function vercelAdapter(compilation, options) {
+@@ -117,15 +120,27 @@ async function vercelAdapter(compilation, options) {
          recursive: true,
        });
      }
@@ -112,7 +114,7 @@ index 407ebc9..4afb3be 100644
  
      await fs.cp(new URL(outputHref), new URL(`./${id}.js`, outputRoot), { recursive: true });
  
-@@ -134,8 +147,28 @@ async function vercelAdapter(compilation, options) {
+@@ -134,8 +149,28 @@ async function vercelAdapter(compilation, options) {
  
        await fs.cp(new URL(asset), new URL(`./${name}`, outputRoot), { recursive: true });
      }
