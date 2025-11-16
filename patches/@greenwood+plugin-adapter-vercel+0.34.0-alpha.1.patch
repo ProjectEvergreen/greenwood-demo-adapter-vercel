@@ -1,5 +1,5 @@
 diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-index 407ebc9..6416812 100644
+index 407ebc9..e5b2d46 100644
 --- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 +++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 @@ -5,17 +5,27 @@ import { checkResourceExists } from "@greenwood/cli/src/lib/resource-utils.js";
@@ -54,10 +54,11 @@ index 407ebc9..6416812 100644
  
    await fs.mkdir(outputRoot, { recursive: true });
    await fs.writeFile(new URL("./index.js", outputRoot), outputFormat);
-@@ -79,22 +91,17 @@ async function vercelAdapter(compilation, options) {
+@@ -79,22 +91,18 @@ async function vercelAdapter(compilation, options) {
    const adapterOutputUrl = new URL("./.vercel/output/functions/", projectDirectory);
    const ssrPages = compilation.graph.filter((page) => page.isSSR);
    const apiRoutes = compilation.manifest.apis;
++  // https://vercel.com/docs/build-output-api/configuration#routes
 +  const dynamicRoutes = [];
  
    if (await checkResourceExists(adapterOutputUrl)) {
@@ -79,7 +80,7 @@ index 407ebc9..6416812 100644
      // chop off the last / in route, and just use the id if the index route
      const name = id === "index" ? id : `.${route.slice(0, -1)}`;
      const outputRoot = new URL(`${name}.func/`, adapterOutputUrl);
-@@ -102,7 +109,7 @@ async function vercelAdapter(compilation, options) {
+@@ -102,7 +110,7 @@ async function vercelAdapter(compilation, options) {
        (file) => file.startsWith(`${id}.route.chunk`) && file.endsWith(".js"),
      );
  
@@ -88,7 +89,7 @@ index 407ebc9..6416812 100644
  
      // handle user's actual route entry file
      await fs.cp(
-@@ -117,15 +124,27 @@ async function vercelAdapter(compilation, options) {
+@@ -117,15 +125,27 @@ async function vercelAdapter(compilation, options) {
          recursive: true,
        });
      }
@@ -118,7 +119,7 @@ index 407ebc9..6416812 100644
  
      await fs.cp(new URL(outputHref), new URL(`./${id}.js`, outputRoot), { recursive: true });
  
-@@ -134,8 +153,28 @@ async function vercelAdapter(compilation, options) {
+@@ -134,8 +154,28 @@ async function vercelAdapter(compilation, options) {
  
        await fs.cp(new URL(asset), new URL(`./${name}`, outputRoot), { recursive: true });
      }
