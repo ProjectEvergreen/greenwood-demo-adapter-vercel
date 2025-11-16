@@ -1,5 +1,5 @@
 diff --git a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
-index 407ebc9..e5b2d46 100644
+index 407ebc9..6bd65d6 100644
 --- a/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 +++ b/node_modules/@greenwood/plugin-adapter-vercel/src/index.js
 @@ -5,17 +5,27 @@ import { checkResourceExists } from "@greenwood/cli/src/lib/resource-utils.js";
@@ -38,7 +38,7 @@ index 407ebc9..e5b2d46 100644
        });
 -      const res = await ${handlerAlias}(req);
 +      const res = '${type}' === 'page'
-+        ? await ${handlerAlias}(request, props)
++        ? await ${handlerAlias}(req, props)
 +        : await ${handlerAlias}(req, { props });
  
        res.headers.forEach((value, key) => {
