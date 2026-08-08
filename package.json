@@ -19,6 +19,9 @@
     "Edge",
     "SSR"
   ],
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "greenwood develop",
     "build": "greenwood build",
