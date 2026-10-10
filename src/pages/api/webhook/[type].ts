@@ -1,9 +1,16 @@
-export async function handler(request, { params }) {
+interface WebhookTypes {
+  type: 'event';
+}
+
+export async function handler(
+  request: Request,
+  { params }: { params?: WebhookTypes }
+): Promise<Response> {
   if(params?.type !== 'event') {
     return new Response('Not Found', { status: 404 });
   }
 
-  const data = await request.json();
+  const data: { name: string; time: number } = await request.json();
   const now = new Date().getTime();
   const message = `Webhook "${data.name}" sent at "${data.time}" was successfully processed at "${now}".  Thank you!`;
 
