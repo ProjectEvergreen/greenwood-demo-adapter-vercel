@@ -29,8 +29,8 @@
     "start": "npm run serve"
   },
   "devDependencies": {
-    "@greenwood/cli": "~0.35.0-alpha.0",
-    "@greenwood/plugin-adapter-vercel": "~0.35.0-alpha.0"
+    "@greenwood/cli": "~0.35.0-alpha.3",
+    "@greenwood/plugin-adapter-vercel": "~0.35.0-alpha.3"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.50.0"
