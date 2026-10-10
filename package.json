@@ -19,15 +19,20 @@
     "Edge",
     "SSR"
   ],
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "greenwood develop",
     "build": "greenwood build",
     "serve": "greenwood serve",
-    "start": "npm run serve"
+    "start": "npm run serve",
+    "check": "tsc"
   },
   "devDependencies": {
-    "@greenwood/cli": "~0.34.0",
-    "@greenwood/plugin-adapter-vercel": "~0.34.0"
+    "@greenwood/cli": "~0.35.0-alpha.3",
+    "@greenwood/plugin-adapter-vercel": "~0.35.0-alpha.3",
+    "typescript": "^6.0.3"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.50.0"
